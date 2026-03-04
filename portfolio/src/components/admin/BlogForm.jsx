@@ -61,8 +61,8 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit }) {
 			const isEditing = Boolean(initialBlog?._id)
 			const response = await fetch(
 				isEditing
-					? `http://localhost:5000/api/blogs/${initialBlog._id}`
-					: 'http://localhost:5000/api/blogs/create',
+					? `$import${initialBlog._id}`
+					: `$V/api/blogs/create`,
 				{
 					method: isEditing ? 'PUT' : 'POST',
 				headers: {

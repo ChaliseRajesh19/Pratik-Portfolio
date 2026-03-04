@@ -17,7 +17,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey }) {
 			setLoading(true)
 			setError('')
 			try {
-				const response = await fetch(`http://localhost:5000/api/works/${category}`, {
+				const response = await fetch(`${import.meta.env.VITE_API_URL}/api/works/${category}`, {
 					signal: controller.signal
 				})
 				const data = await response.json()
@@ -51,7 +51,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey }) {
 		setError('')
 		try {
 			const token = localStorage.getItem('adminToken')
-			const response = await fetch(`http://localhost:5000/api/works/${work._id}`, {
+			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/works/${work._id}`, {
 				method: 'DELETE',
 				headers: token ? { Authorization: `Bearer ${token}` } : undefined
 			})

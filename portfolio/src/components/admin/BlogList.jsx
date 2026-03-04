@@ -13,7 +13,7 @@ function BlogList({ refreshKey, onEdit }) {
 			setLoading(true)
 			setError('')
 			try {
-				const response = await fetch('http://localhost:5000/api/blogs', {
+				const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs`, {
 					signal: controller.signal
 				})
 				const data = await response.json()
@@ -47,7 +47,7 @@ function BlogList({ refreshKey, onEdit }) {
 		setError('')
 		try {
 			const token = localStorage.getItem('adminToken')
-			const response = await fetch(`http://localhost:5000/api/blogs/${blog._id}`, {
+			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${blog._id}`, {
 				method: 'DELETE',
 				headers: token ? { Authorization: `Bearer ${token}` } : undefined
 			})

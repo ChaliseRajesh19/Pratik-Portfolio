@@ -36,7 +36,7 @@ function UploadForm({ categories, defaultCategory, onUploaded }) {
 		try {
 			setLoading(true)
 			const token = localStorage.getItem('adminToken')
-			const response = await fetch('http://localhost:5000/api/works/upload', {
+			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/works/upload`, {
 				method: 'POST',
 				headers: token ? { Authorization: `Bearer ${token}` } : undefined,
 				body: formData
