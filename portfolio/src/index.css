@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+html {
+	scroll-behavior: smooth;
+	scroll-padding-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
+@keyframes float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+.float-slow {
+	animation: float 10s ease-in-out infinite;
+}
+
+.ck.ck-editor__main > .ck-editor__editable {
+	min-height: 260px;
+	background: transparent;
+	color: #e2e8f0;
+	border: none;
+	padding: 1rem;
+}
+
+.ck.ck-toolbar {
+	border: none;
+	border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+	background: rgba(2, 6, 23, 0.7);
+	border-top-left-radius: 0.75rem;
+	border-top-right-radius: 0.75rem;
+}
+
+.ck.ck-editor__main {
+	border-bottom-left-radius: 0.75rem;
+	border-bottom-right-radius: 0.75rem;
+}
+
+.ck.ck-dropdown__panel {
+	background: #0f172a;
+	color: #e2e8f0;
+}
+
+.ck.ck-button,
+.ck.ck-button:not(.ck-disabled):hover,
+.ck.ck-button.ck-on {
+	color: #e2e8f0;
+}
+
+.blog-content h1,
+.blog-content h2,
+.blog-content h3 {
+	color: #f8fafc;
+	margin-top: 1.75rem;
+	margin-bottom: 0.75rem;
+	font-weight: 600;
+}
+
+.blog-content p {
+	margin-bottom: 1rem;
+	line-height: 1.7;
+	color: #cbd5f5;
+}
+
+.blog-content a {
+	color: #22d3ee;
+	text-decoration: underline;
+}
+
+.blog-content blockquote {
+	border-left: 3px solid rgba(148, 163, 184, 0.6);
+	padding-left: 1rem;
+	color: #cbd5f5;
+	font-style: italic;
+}
+
+.blog-content ul,
+.blog-content ol {
+	margin: 0.5rem 0 1rem 1.5rem;
+}
+
+.blog-content code {
+	background: rgba(15, 23, 42, 0.7);
+	padding: 0.15rem 0.35rem;
+	border-radius: 0.3rem;
+}
