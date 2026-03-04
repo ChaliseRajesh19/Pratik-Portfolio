@@ -14,7 +14,7 @@ function BlogPost() {
 			setLoading(true)
 			setError('')
 			try {
-				const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
+				const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${id}`, {
 					signal: controller.signal
 				})
 				const data = await response.json()

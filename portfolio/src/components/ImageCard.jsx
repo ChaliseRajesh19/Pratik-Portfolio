@@ -4,7 +4,7 @@ function ImageCard({ work }) {
   const imageSrc = work?.imageURL
     ? work.imageURL.startsWith('http')
       ? work.imageURL
-      : `http://localhost:5000${work.imageURL}`
+      : `${import.meta.env.VITE_API_URL}${work.imageURL}`
     : '';
 
   return (

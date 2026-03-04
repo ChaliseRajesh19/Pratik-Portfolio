@@ -8,7 +8,7 @@ function WorkPages() {
     const [works,setWorks] = useState([])
 
     useEffect(() => {
-      fetch(`http://localhost:5000/api/works/${category}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/works/${category}`)
         .then(res => res.json())
         .then(data => setWorks(data))
         .catch(err => console.log(err))
