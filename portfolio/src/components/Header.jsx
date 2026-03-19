@@ -77,14 +77,7 @@ function Header() {
         {/* Center: Nav */}
         <nav className="flex-1">
           <ul className="hidden md:flex items-center justify-center gap-6 text-sm font-medium">
-            <li>
-              <NavLink
-                to="/#home"
-                className={hashLinkClass('#home')}
-              >
-                Home
-              </NavLink>
-            </li>
+              
             <li>
               <NavLink
                 to="/#about"
@@ -93,14 +86,7 @@ function Header() {
                 About
               </NavLink>
             </li>
-            <li>
-              <NavLink
-                to="/#skills"
-                className={hashLinkClass('#skills')}
-              >
-                Skills
-              </NavLink>
-            </li>
+           
             <li>
               <NavLink
                 to="/#service"
@@ -138,7 +124,7 @@ function Header() {
           </ul>
         </nav>
 
-        {/* Right: Social */}
+        {/* Right: Social
         <div className="min-w-[160px] hidden md:flex items-center justify-end gap-3 text-slate-300">
           <a
             href="https://facebook.com/creativepratik16"
@@ -176,7 +162,7 @@ function Header() {
           >
             <FaInstagram size={18} />
           </a>
-        </div>
+        </div> */}
 
         <button
           type="button"
@@ -197,21 +183,13 @@ function Header() {
         <div className="md:hidden border-t border-slate-800/80 bg-slate-950/95">
           <nav className="max-w-6xl mx-auto px-4 py-4">
             <ul className="flex flex-col gap-3 text-sm font-medium">
-              <li>
-                <NavLink to="/#home" className={hashLinkClass('#home')}>
-                  Home
-                </NavLink>
-              </li>
+              
               <li>
                 <NavLink to="/#about" className={hashLinkClass('#about')}>
                   About
                 </NavLink>
               </li>
-              <li>
-                <NavLink to="/#skills" className={hashLinkClass('#skills')}>
-                  Skills
-                </NavLink>
-              </li>
+              
               <li>
                 <NavLink to="/#service" className={hashLinkClass('#service')}>
                   Service
@@ -239,44 +217,6 @@ function Header() {
               </li>
             </ul>
 
-            <div className="mt-5 flex items-center gap-4 text-slate-300">
-              <a
-                href="https://facebook.com/creativepratik16"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-cyan-400 transition-colors"
-                aria-label="Facebook"
-              >
-                <FaFacebook size={18} />
-              </a>
-              <a
-                href="https://linkedin.com/in/creativepratik22/"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-cyan-400 transition-colors"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedin size={18} />
-              </a>
-              <a
-                href="https://twitter.com/creativepratik_"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-cyan-400 transition-colors"
-                aria-label="Twitter"
-              >
-                <FaTwitter size={18} />
-              </a>
-              <a
-                href="https://instagram.com/creativepratik22"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-cyan-400 transition-colors"
-                aria-label="Instagram"
-              >
-                <FaInstagram size={18} />
-              </a>
-            </div>
           </nav>
         </div>
       ) : null}

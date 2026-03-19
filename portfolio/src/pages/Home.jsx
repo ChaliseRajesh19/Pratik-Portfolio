@@ -69,22 +69,6 @@ function Home() {
             </div>
           </div>
 
-          {/* Right */}
-          <div className="relative flex justify-center">
-            <div className="absolute -top-6 -left-6 w-8 h-8 rounded-full border border-cyan-500/40" />
-            <div className="absolute -bottom-6 -right-6 w-6 h-6 rounded-full bg-cyan-500/50 blur-sm" />
-            <div className="relative perspective-[1000px] float-slow">
-              <img 
-                src={ProfileImage}
-                alt="Profile"
-                className="w-72 h-72 md:w-80 md:h-80 rounded-full object-contain bg-slate-900/60 border-4 border-cyan-500/30 ring-2 ring-cyan-400/20 shadow-2xl shadow-cyan-500/30 transform will-change-transform transition-transform duration-300 hover:rotate-x-6 hover:-rotate-y-6 hover:scale-105"
-              />
-            </div>
-
-            <span className="absolute bottom-1 right-1 text-xs bg-slate-800/80 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/30">
-              Available for Hire
-            </span>
-          </div>
         </div>
       </section>
 
