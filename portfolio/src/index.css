@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* ── Three.js / Canvas utilities ──────────────────────────── */
+
+/* Hide scrollbar on the horizontal card scroll rail */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Ensure R3F canvases never steal pointer events from HTML above */
+canvas.r3f-bg { pointer-events: none; }
+
+/* Enforce pointer cursor globally for interactive elements */
+button, a, select, [role="button"] {
+	cursor: pointer !important;
+}
+
 html {
 	scroll-behavior: smooth;
 	scroll-padding-top: 4.5rem;

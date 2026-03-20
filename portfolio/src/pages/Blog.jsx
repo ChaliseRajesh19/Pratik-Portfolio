@@ -9,10 +9,41 @@ function Blog({ withTopOffset = true }) {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs`)
+        const apiUrl = import.meta.env.VITE_API_URL;
+        
+        // Show fallback mock UI if API URL is not set (so it doesn't crash on Vite's index.html)
+        if (!apiUrl) {
+          setBlogs([
+            {
+              _id: '1',
+              title: 'ok xa tw',
+              content: 'hahha hey hey fhidgn<br/><br/>Add a cover image for extra impact.',
+              date: new Date().toISOString(),
+              author: 'PRATIK',
+              tags: ['ui']
+            },
+            {
+              _id: '2',
+              title: 'gbjdbg',
+              content: 'bdkkjbv v&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br/><br/>Add a cover image for extra impact.',
+              date: new Date().toISOString(),
+              author: 'GBJDBG',
+              tags: ['gbjdbg']
+            }
+          ]);
+          return;
+        }
+
+        const response = await fetch(`${apiUrl}/api/blogs`)
         if (!response.ok) {
           throw new Error('Failed to fetch blogs')
         }
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new TypeError("Oops, we haven't got JSON! Is the backend running?");
+        }
+        
         const data = await response.json()
         setBlogs(data)
       } catch (err) {
@@ -51,12 +82,12 @@ function Blog({ withTopOffset = true }) {
   }
 
   const containerClass = withTopOffset
-    ? 'min-h-screen mt-16'
+    ? 'min-h-screen pt-24 pb-16'
     : 'mt-0'
 
   return (
-    <div className={`bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 ${containerClass}`}>
-      <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
+    <div className={`bg-[#020617] text-slate-100 ${containerClass}`}>
+      <div className="max-w-6xl mx-auto px-4">
         <h1 className="text-4xl md:text-5xl font-bold">My Blog</h1>
         <p className="mt-3 text-sm text-slate-400">
           Fresh writing pulled straight from your database.

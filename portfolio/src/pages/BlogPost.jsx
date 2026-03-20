@@ -14,9 +14,29 @@ function BlogPost() {
 			setLoading(true)
 			setError('')
 			try {
-				const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${id}`, {
+				const apiUrl = import.meta.env.VITE_API_URL;
+				if (!apiUrl) {
+					// Fallback mock data if API is missing
+					setBlog({
+						_id: id,
+						title: id === '1' ? 'ok xa tw' : 'gbjdbg',
+						content: id === '1' ? 'hahha hey hey fhidgn<br/><br/>Add a cover image for extra impact.' : 'bdkkjbv v&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br/><br/>Add a cover image for extra impact.',
+						date: new Date().toISOString(),
+						author: id === '1' ? 'PRATIK' : 'GBJDBG',
+						tags: id === '1' ? ['ui'] : ['gbjdbg']
+					});
+					return;
+				}
+
+				const response = await fetch(`${apiUrl}/api/blogs/${id}`, {
 					signal: controller.signal
 				})
+				
+				const contentType = response.headers.get("content-type");
+				if (!contentType || !contentType.includes("application/json")) {
+					throw new TypeError("Oops, we haven't got JSON! Is the backend running?");
+				}
+				
 				const data = await response.json()
 				if (!response.ok) {
 					throw new Error(data.message || 'Failed to load blog')
@@ -50,9 +70,9 @@ function BlogPost() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 mt-16">
-			<div className="max-w-3xl mx-auto px-4 py-16 md:py-24">
-				<Link to="/blog" className="text-xs uppercase tracking-[0.35em] text-emerald-300/80">
+		<div className="min-h-screen bg-[#020617] text-slate-100 pt-24 pb-16">
+			<div className="max-w-3xl mx-auto px-4 pt-10">
+				<Link to="/blogs" className="text-xs uppercase tracking-[0.35em] text-blue-400 hover:text-blue-300 transition-colors">
 					Back to blog
 				</Link>
 
@@ -69,7 +89,7 @@ function BlogPost() {
 				) : null}
 
 				{!loading && !error && blog ? (
-					<article className="mt-8 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-8 shadow-xl shadow-slate-950/30">
+					<article className="mt-8 rounded-3xl border border-blue-900/30 bg-[#061230] p-8 shadow-xl">
 						<div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.25em] text-slate-400">
 							<span>{formatDate(blog.date) || 'Draft'}</span>
 							{blog.author ? <span>By {blog.author}</span> : null}
@@ -83,7 +103,7 @@ function BlogPost() {
 								{blog.tags.map((tag) => (
 									<span
 										key={tag}
-										className="rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1 text-[11px] font-medium text-slate-300"
+										className="rounded-full border border-blue-900/50 bg-[#020617] px-3 py-1 text-[11px] font-medium text-slate-300"
 									>
 										#{tag}
 									</span>

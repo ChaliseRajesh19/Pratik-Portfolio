@@ -17,12 +17,12 @@ function BlogCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-2xl border border-gray-700/60 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 p-6 shadow-lg shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-cyan-500/20 ${className}`}
+      className={`group relative overflow-hidden rounded-2xl border border-blue-900/30 bg-[#061230] p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] ${className}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 p-[1px] shadow-lg">
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-gray-900 text-xs font-semibold uppercase tracking-widest text-cyan-200">
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 p-[1px] shadow-lg">
+            <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#020617] text-xs font-semibold uppercase tracking-widest text-blue-200">
               {category}
             </div>
           </div>
@@ -32,28 +32,28 @@ function BlogCard({
             <span>{readTime}</span>
           </div>
         </div>
-        <div className="rounded-full border border-gray-700/80 bg-gray-900/70 px-3 py-1 text-[11px] uppercase tracking-widest text-gray-400">
+        <div className="rounded-full border border-blue-900/50 bg-[#020617]/50 px-3 py-1 text-[11px] uppercase tracking-widest text-slate-400">
           {badgeText}
         </div>
       </div>
 
       <div className="mt-5">
-        <h3 className="text-lg font-semibold text-white transition-colors duration-300 group-hover:text-cyan-300">
+        <h3 className="text-lg font-semibold text-white transition-colors duration-300 group-hover:text-blue-400">
           {id ? (
-            <Link to={`/blog/${id}`} className="hover:text-cyan-300">
+            <Link to={`/blog/${id}`} className="hover:text-blue-400">
               {title}
             </Link>
           ) : (
             title
           )}
         </h3>
-        <p className="mt-2 text-sm leading-relaxed text-gray-400">
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">
           {excerpt}
         </p>
       </div>
 
       {imageUrl ? (
-        <div className="mt-5 overflow-hidden rounded-xl border border-gray-800/80">
+        <div className="mt-5 overflow-hidden rounded-xl border border-blue-900/30">
           <img
             src={imageUrl}
             alt={title}
@@ -62,7 +62,7 @@ function BlogCard({
           />
         </div>
       ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-gray-700/80 bg-gray-900/60 p-4 text-xs text-gray-500">
+        <div className="mt-5 rounded-xl border border-dashed border-blue-900/50 bg-[#020617]/50 p-4 text-xs text-slate-500">
           Add a cover image for extra impact.
         </div>
       )}
@@ -72,7 +72,7 @@ function BlogCard({
           ? tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-gray-700/70 bg-gray-900/70 px-3 py-1 text-[11px] font-medium text-gray-400"
+                className="rounded-full border border-blue-900/40 bg-[#020617]/40 px-3 py-1 text-[11px] font-medium text-slate-400"
               >
                 #{tag}
               </span>
@@ -81,13 +81,13 @@ function BlogCard({
         {id ? (
           <Link
             to={`/blog/${id}`}
-            className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan-300"
+            className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-400"
           >
             Read more
             <span className="text-base transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         ) : (
-          <span className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan-300">
+          <span className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-400">
             Read more
             <span className="text-base transition-transform duration-300 group-hover:translate-x-1">→</span>
           </span>
