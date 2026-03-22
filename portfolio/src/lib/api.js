@@ -1,29 +1,13 @@
-const rawApiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+export const API_BASE_URL = "https://portfolio-backend-r2k1.vercel.app";
 
 function trimTrailingSlash(value) {
   return value ? value.replace(/\/+$/, "") : "";
 }
-
-function resolveApiBaseUrl() {
-  if (rawApiBaseUrl) return trimTrailingSlash(rawApiBaseUrl);
-
-  if (typeof window !== "undefined") {
-    const { hostname, origin } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:5000";
-    }
-
-    return trimTrailingSlash(origin);
-  }
-
-  return "";
-}
-
-export const API_BASE_URL = resolveApiBaseUrl();
+export const RESOLVED_API_BASE_URL = trimTrailingSlash(API_BASE_URL);
 
 export function apiUrl(path = "") {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE_URL}${cleanPath}`;
+  return `${RESOLVED_API_BASE_URL}${cleanPath}`;
 }
 
 export function assetUrl(path = "") {
@@ -31,5 +15,5 @@ export function assetUrl(path = "") {
   if (/^https?:\/\//i.test(path)) return path;
 
   const cleanPath = path.replace(/\\/g, "/");
-  return `${API_BASE_URL}${cleanPath.startsWith("/") ? "" : "/"}${cleanPath}`;
+  return `${RESOLVED_API_BASE_URL}${cleanPath.startsWith("/") ? "" : "/"}${cleanPath}`;
 }

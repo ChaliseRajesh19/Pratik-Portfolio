@@ -1,44 +1,18 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
 import dotenv from 'dotenv';
-import workRoutes from './routes/workRoutes.js';
-import createAdmin from './config/createAdmin.js';
-import blogRoutes from './routes/blogRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import serviceRoutes from './routes/serviceRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
+import app from './app.js';
+import { connectToDatabase } from './lib/db.js';
 
 dotenv.config();
 
-const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json());
-
-
-
-app.use('/uploads', express.static('uploads'));
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/works', workRoutes);
-app.use('/api/blogs', blogRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/categories', categoryRoutes);
-
-
-mongoose.connect(process.env.MONGO_URI)
-    .then( async () => {
-        console.log('MongoDB connected')
-        await createAdmin();
-    })
-    .catch((err) => console.error('MongoDB connection error:', err));
-
-
-app.listen(port, async () => {
-    console.log(`Server is running on port ${port}`);
-});
+connectToDatabase()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  });
