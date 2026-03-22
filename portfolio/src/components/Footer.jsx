@@ -1,7 +1,10 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaGithub, FaInstagram, FaLinkedin, FaTwitter, FaFacebook } from 'react-icons/fa';
 
 const Footer = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   return (
     <footer className="relative bg-[#020617] text-slate-200 overflow-hidden border-t border-blue-900/30">
       
@@ -23,10 +26,10 @@ const Footer = () => {
           
           <div className="flex gap-3">
             {[
-              { Icon: FaFacebook, href: 'https://facebook.com/creativepratik16' },
+              { Icon: FaFacebook, href: 'https://facebook.com/creativepratik22' },
               { Icon: FaLinkedin, href: 'https://linkedin.com/in/creativepratik22/' },
               { Icon: FaInstagram, href: 'https://instagram.com/creativepratik22' },
-              { Icon: FaTwitter, href: 'https://twitter.com/creativepratik_' },
+              { Icon: FaTwitter, href: 'https://x.com/creativepratik_' },
             ].map((social, i) => (
               <a
                 key={i}
@@ -48,19 +51,37 @@ const Footer = () => {
           </h4>
           <nav className="flex flex-col gap-3">
             {[
-              { name: 'Home', path: '/' },
-              { name: 'About', path: '/#about' },
-              { name: 'Portfolio', path: '/#portfolio' },
-              { name: 'Contact', path: '/#contact' }
+              { name: 'Home',      id: null      },
+              { name: 'About',     id: 'about'    },
+              { name: 'Portfolio', id: 'portfolio' },
+              { name: 'Blogs',     id: 'blogs', isRoute: true },
+              { name: 'Contact',   id: 'contact'  }
             ].map((link) => (
-              <a
+              <button
                 key={link.name}
-                href={link.path}
-                className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group"
+                onClick={() => {
+                  if (link.isRoute) {
+                    navigate('/blogs');
+                    return;
+                  }
+
+                  if (location.pathname !== '/') {
+                    navigate('/', { state: { scrollTo: link.id } });
+                    return;
+                  }
+
+                  if (!link.id) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } else {
+                    const el = document.getElementById(link.id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group text-left"
               >
                 {link.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-px bg-blue-600 transition-all duration-300 group-hover:w-full" />
-              </a>
+              </button>
             ))}
           </nav>
         </div>

@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 
 /**
  * Color themes per card index — each card gets a unique gradient.
@@ -14,13 +15,13 @@ const GRADIENTS = [
 
 /**
  * Single portfolio card with CSS 3D perspective tilt on mouse hover.
- * On mobile (isMobile=true) the tilt is disabled for performance,
- * but the glare and gradient still apply.
+ * Clicking anywhere on the card navigates to the category work page.
  */
 function TiltCard({ work, isMobile, index }) {
   const cardRef = useRef(null)
   const [tilt, setTilt] = useState({ rotX: 0, rotY: 0, glareX: 50, glareY: 50 })
   const [hovered, setHovered] = useState(false)
+  const navigate = useNavigate()
 
   const gradient = GRADIENTS[index % GRADIENTS.length]
 
@@ -32,8 +33,8 @@ function TiltCard({ work, isMobile, index }) {
     const cx = rect.width  / 2
     const cy = rect.height / 2
     setTilt({
-      rotX:   -((y - cy) / cy) * 12, // tilt up when mouse is at top
-      rotY:    ((x - cx) / cx) * 12, // tilt right when mouse is at right
+      rotX:   -((y - cy) / cy) * 12,
+      rotY:    ((x - cx) / cx) * 12,
       glareX: (x / rect.width)  * 100,
       glareY: (y / rect.height) * 100,
     })
@@ -44,24 +45,43 @@ function TiltCard({ work, isMobile, index }) {
     setHovered(false)
   }, [])
 
+  const destination = `/portfolio/${work.pagename}`
+
   return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={handleMouseLeave}
+    <motion.div
+      initial={{ opacity: 0, rotateX: -60, rotateY: 30, y: 200, z: -300, scale: 0.7 }}
+      whileInView={{ opacity: 1, rotateX: 0, rotateY: 0, y: 0, z: 0, scale: 1 }}
+      viewport={{ once: false, amount: 0.1 }}
+      transition={{ 
+        type: 'spring', 
+        stiffness: 100, 
+        damping: 14, 
+        mass: 1.2,
+        delay: index * 0.15 
+      }}
       style={{
-        // CSS 3D perspective tilt — the core "3D card" effect
-        transform: `perspective(1000px) rotateX(${tilt.rotX}deg) rotateY(${tilt.rotY}deg) scale(${hovered && !isMobile ? 1.04 : 1})`,
-        transition: hovered ? 'transform 0.08s ease' : 'transform 0.5s cubic-bezier(0.23,1,0.32,1)',
-        transformStyle: 'preserve-3d',
-        willChange: 'transform',
-        // Card width: fixed on desktop so horizontal scroll shows them offset
+        perspective: '1500px',
         flexShrink: 0,
         width: isMobile ? '100%' : '300px',
       }}
-      className="relative rounded-2xl overflow-hidden cursor-pointer group"
+      className="group"
     >
+      {/* Entire card is clickable */}
+      <div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={handleMouseLeave}
+        onClick={() => navigate(destination)}
+        style={{
+          transform: `perspective(1000px) rotateX(${tilt.rotX}deg) rotateY(${tilt.rotY}deg) scale(${hovered && !isMobile ? 1.04 : 1})`,
+          transition: hovered ? 'transform 0.08s ease' : 'transform 0.5s cubic-bezier(0.23,1,0.32,1)',
+          transformStyle: 'preserve-3d',
+          willChange: 'transform',
+          cursor: 'pointer',
+        }}
+        className="relative w-full h-full rounded-2xl overflow-hidden"
+      >
       {/* Outer glow border (visible on hover) */}
       <div
         className="absolute inset-0 rounded-2xl transition-opacity duration-300"
@@ -92,55 +112,40 @@ function TiltCard({ work, isMobile, index }) {
 
       {/* Card content — translate-z pushes it "out" of the card plane */}
       <div className="relative p-8" style={{ transform: 'translateZ(20px)' }}>
-        {/* Icon badge */}
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
-          style={{ background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})` }}
-        >
-          {/* Palette icon — thematically matches graphic design */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="26" height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-4 mb-5">
+          {/* Icon badge */}
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg text-3xl flex-shrink-0"
+            style={{ background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})` }}
           >
-            <circle cx="13.5" cy="6.5" r=".5" fill="white" />
-            <circle cx="17.5" cy="10.5" r=".5" fill="white" />
-            <circle cx="8.5"  cy="7.5"  r=".5" fill="white" />
-            <circle cx="6.5"  cy="12.5" r=".5" fill="white" />
-            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-          </svg>
-        </div>
+            {work.icon || '🎨'}
+          </div>
 
-        <h3 className="text-xl font-bold text-white mb-3 leading-snug">{work.title}</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-white leading-snug">{work.title}</h3>
+        </div>
         <p  className="text-slate-400 text-sm leading-relaxed mb-7">{work.description}</p>
 
-        <Link to={`/portfolio/${work.pagename}`}>
-          <button
-            className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest transition-all duration-200"
-            style={{ color: gradient.from }}
+        {/* "Explore Works" arrow — visual only, card click handles navigation */}
+        <span
+          className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest transition-all duration-200"
+          style={{ color: gradient.from }}
+        >
+          Explore Works
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16" height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="group-hover:translate-x-1.5 transition-transform duration-300"
           >
-            Explore Works
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16" height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="group-hover:translate-x-1.5 transition-transform duration-300"
-            >
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </button>
-        </Link>
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </span>
       </div>
 
       {/* Bottom number label */}
@@ -150,7 +155,8 @@ function TiltCard({ work, isMobile, index }) {
       >
         {String(index + 1).padStart(2, '0')}
       </div>
-    </div>
+      </div>
+    </motion.div>
   )
 }
 
@@ -160,21 +166,26 @@ function TiltCard({ work, isMobile, index }) {
  * Desktop: horizontal scrollable row of 3D-tilt cards with fade-edge masks.
  * Mobile:  regular vertical stack (no heavy 3D).
  *
- * @param {{ works: Array }} props  The same `works` array used in Portfolio.jsx
+ * @param {{ works: Array, limit: number|null, showViewAll: boolean }} props
  */
-export function ProjectCards3D({ works }) {
+export function ProjectCards3D({ works, limit = null, showViewAll = false }) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const scrollContainerRef = useRef(null)
+
+  // On mobile show 1 fewer card (5 vs 6)
+  const mobileLimit = limit !== null ? Math.max(1, limit - 1) : null
+  const effectiveLimit = isMobile ? mobileLimit : limit
+  const maxCards = effectiveLimit !== null ? effectiveLimit : works.length
+  const displayedWorks = works.slice(0, maxCards)
+  const hasMore = showViewAll && works.length > maxCards
 
   useEffect(() => {
     const el = scrollContainerRef.current
     if (!el) return
 
     const handleWheel = (e) => {
-      // Prioritize vertical scroll events over horizontal trackpad swipes to translate
       if (e.deltaY !== 0 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault()
-        // Multiply by 2.5 to make the horizontal scroll pleasantly fast
         el.scrollLeft += e.deltaY * 2.5
       }
     }
@@ -183,36 +194,61 @@ export function ProjectCards3D({ works }) {
     return () => el.removeEventListener('wheel', handleWheel)
   }, [])
 
+  const ViewAllBtn = () => (
+    <div className="flex justify-center mt-10">
+      <Link
+        to="/portfolio"
+        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[11px] uppercase tracking-[0.2em] text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-all duration-300"
+      >
+        View All Works
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+        </svg>
+      </Link>
+    </div>
+  )
+
   if (isMobile) {
     return (
-      <div className="grid grid-cols-1 gap-6 px-4 pb-8">
-        {works.map((work, i) => (
-          <TiltCard key={work.id} work={work} isMobile index={i} />
-        ))}
-      </div>
+      <>
+        <div className="flex flex-col gap-6 px-4 pb-8 relative">
+          {displayedWorks.map((work, i) => (
+            <div 
+              key={work.id} 
+              className="sticky"
+              style={{ top: `calc(84px + ${i * 12}px)`, zIndex: i }}
+            >
+              <TiltCard work={work} isMobile index={i} />
+            </div>
+          ))}
+        </div>
+        {hasMore && <ViewAllBtn />}
+      </>
     )
   }
 
   return (
-    <div className="relative">
-      {/* Left + right fade masks so cards disappear into the edges nicely */}
-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
+    <>
+      <div className="relative">
+        {/* Left + right fade masks */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
 
-      {/* Horizontal scroll container — CSS hide-scrollbar */}
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-6 overflow-x-auto pb-8 pt-2 px-16 w-full"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {works.map((work, i) => (
-          <TiltCard key={work.id} work={work} isMobile={false} index={i} />
-        ))}
+        {/* Horizontal scroll container */}
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-6 overflow-x-auto pb-8 pt-2 px-16 w-full"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {displayedWorks.map((work, i) => (
+            <TiltCard key={work.id} work={work} isMobile={false} index={i} />
+          ))}
+        </div>
+
       </div>
-
-      <p className="text-center text-slate-600 text-xs mt-1 tracking-widest uppercase">
-        ← Drag or Scroll →
-      </p>
-    </div>
+      {hasMore && <ViewAllBtn />}
+    </>
   )
 }
+
+export default ProjectCards3D

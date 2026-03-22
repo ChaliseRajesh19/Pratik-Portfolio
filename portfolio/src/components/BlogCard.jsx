@@ -1,97 +1,90 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 function BlogCard({
   title = 'Designing Calm UI With Bold Type',
-  excerpt = 'A quick walkthrough of layout rhythm, spacing systems, and type pairings that feel modern but timeless.',
-  date = 'Mar 02, 2026',
+  excerpt = 'A quick walkthrough of layout rhythm, spacing systems, and type pairings.',
+date = 'Mar 02, 2026',
   readTime = '6 min read',
-  category = 'Blog',
-  imageUrl = '',
   tags = [],
   author = '',
   id = '',
+  coverImage = '',
   className = ''
 }) {
-  const badgeText = author ? `By ${author}` : 'New'
+  const navigate = useNavigate()
+
+  const handleCardClick = () => {
+    if (id) navigate(`/blog/${id}`)
+  }
+
+  const primaryTag = Array.isArray(tags) && tags.length > 0 ? tags[0] : null
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-2xl border border-blue-900/30 bg-[#061230] p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] ${className}`}
+      onClick={handleCardClick}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-800/60 bg-[#0d111e] transition-all duration-300 hover:-translate-y-1 hover:border-slate-700/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] ${id ? 'cursor-pointer' : ''} ${className}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 p-[1px] shadow-lg">
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#020617] text-xs font-semibold uppercase tracking-widest text-blue-200">
-              {category}
-            </div>
-          </div>
-          <div className="text-xs text-gray-400">
-            <span className="font-medium text-gray-300">{date}</span>
-            <span className="mx-2 text-gray-600">•</span>
-            <span>{readTime}</span>
-          </div>
-        </div>
-        <div className="rounded-full border border-blue-900/50 bg-[#020617]/50 px-3 py-1 text-[11px] uppercase tracking-widest text-slate-400">
-          {badgeText}
-        </div>
-      </div>
-
-      <div className="mt-5">
-        <h3 className="text-lg font-semibold text-white transition-colors duration-300 group-hover:text-blue-400">
-          {id ? (
-            <Link to={`/blog/${id}`} className="hover:text-blue-400">
-              {title}
-            </Link>
-          ) : (
-            title
-          )}
-        </h3>
-        <p className="mt-2 text-sm leading-relaxed text-slate-400">
-          {excerpt}
-        </p>
-      </div>
-
-      {imageUrl ? (
-        <div className="mt-5 overflow-hidden rounded-xl border border-blue-900/30">
+      {/* Cover image */}
+      <div className="relative overflow-hidden h-48 bg-gradient-to-br from-slate-800 to-slate-900">
+        {coverImage ? (
           <img
-            src={imageUrl}
+            src={coverImage}
             alt={title}
-            className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-        </div>
-      ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-blue-900/50 bg-[#020617]/50 p-4 text-xs text-slate-500">
-          Add a cover image for extra impact.
-        </div>
-      )}
-
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        {Array.isArray(tags) && tags.length > 0
-          ? tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-blue-900/40 bg-[#020617]/40 px-3 py-1 text-[11px] font-medium text-slate-400"
-              >
-                #{tag}
-              </span>
-            ))
-          : null}
-        {id ? (
-          <Link
-            to={`/blog/${id}`}
-            className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-400"
-          >
-            Read more
-            <span className="text-base transition-transform duration-300 group-hover:translate-x-1">→</span>
-          </Link>
         ) : (
-          <span className="ml-auto inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-400">
-            Read more
-            <span className="text-base transition-transform duration-300 group-hover:translate-x-1">→</span>
+          <div
+            className="w-full h-full"
+            style={{ background: 'linear-gradient(135deg, #0f2044 0%, #1a1040 50%, #0b1a35 100%)' }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <rect x="10" y="10" width="60" height="60" rx="8" stroke="#60a5fa" strokeWidth="1.5" strokeDasharray="4 4"/>
+                <circle cx="40" cy="40" r="15" stroke="#a78bfa" strokeWidth="1.5"/>
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-5">
+        {/* Category pill */}
+        {primaryTag && (
+          <span className="inline-block mb-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] bg-violet-500/15 border border-violet-500/30 text-violet-300">
+            {primaryTag}
           </span>
         )}
+
+        {/* Title */}
+        <h3 className="text-base font-bold text-white leading-snug mb-2 group-hover:text-blue-300 transition-colors duration-200" style={{ fontFamily: "'Inter', sans-serif" }}>
+          {title}
+        </h3>
+
+        {/* Excerpt */}
+        <p className="text-sm text-slate-500 leading-relaxed line-clamp-3 mb-4">
+          {excerpt}
+        </p>
+
+        {/* Footer */}
+        <div className="flex items-center gap-4 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+            {date}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+            {readTime}
+          </span>
+        </div>
       </div>
     </article>
   )

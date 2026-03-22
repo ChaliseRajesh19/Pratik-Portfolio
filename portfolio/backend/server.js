@@ -6,6 +6,8 @@ import workRoutes from './routes/workRoutes.js';
 import createAdmin from './config/createAdmin.js';
 import blogRoutes from './routes/blogRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ app.get("/", (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/works', workRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/categories', categoryRoutes);
 
 
 mongoose.connect(process.env.MONGO_URI)

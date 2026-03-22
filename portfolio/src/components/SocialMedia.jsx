@@ -13,7 +13,7 @@ function SocialMedia() {
             <MdEmail className="w-8 h-8" />
         </a>
         <a
-            href="https://www.facebook.com/creativepratik16/"
+            href="https://www.facebook.com/creativepratik22/"
             className="text-indigo-300 hover:text-indigo-100 transition-colors duration-300"
         >
             <FaFacebook className="w-8 h-8" />

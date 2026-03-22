@@ -1,121 +1,430 @@
-import React from 'react'
+import React from "react";
+import { toast } from "react-hot-toast";
 
-function UploadForm({ categories, defaultCategory, onUploaded }) {
-	const [title, setTitle] = React.useState('')
-	const [category, setCategory] = React.useState(defaultCategory || categories[0])
-	const [imageFile, setImageFile] = React.useState(null)
-	const [loading, setLoading] = React.useState(false)
-	const [error, setError] = React.useState('')
-	const [success, setSuccess] = React.useState('')
+function UploadForm({
+  categories,
+  defaultCategory,
+  onUploaded,
+  initialWork,
+  onCancel,
+}) {
+  const [title, setTitle] = React.useState("");
+  const [category, setCategory] = React.useState(
+    defaultCategory || categories[0],
+  );
+  const [description, setDescription] = React.useState("");
+  const [tagsInput, setTagsInput] = React.useState("");
+  const [link, setLink] = React.useState("");
+  const [previewImage, setPreviewImage] = React.useState(null);
+  const [galleryImages, setGalleryImages] = React.useState([]);
+  const [existingGalleryImages, setExistingGalleryImages] = React.useState([]);
+  const [previewImageUrl, setPreviewImageUrl] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
-	React.useEffect(() => {
-		if (defaultCategory) {
-			setCategory(defaultCategory)
-		}
-	}, [defaultCategory])
+  React.useEffect(() => {
+    if (initialWork) {
+      setTitle(initialWork.title || "");
+      setCategory(initialWork.category || categories[0] || "");
+      setDescription(initialWork.description || "");
+      setTagsInput(initialWork.tags ? initialWork.tags.join(", ") : "");
+      setLink(initialWork.link || "");
+      setExistingGalleryImages(initialWork.galleryImages || []);
+      setPreviewImageUrl(initialWork.imageURL || "");
+    } else if (defaultCategory && !category) {
+      setCategory(defaultCategory);
+    }
+  }, [initialWork, defaultCategory, categories, category]);
 
-	const handleSubmit = async (event) => {
-		event.preventDefault()
-		setError('')
-		setSuccess('')
+  const getFileUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    const cleanPath = url.replace(/\\/g, "/");
+    return `${import.meta.env.VITE_API_URL}${cleanPath.startsWith("/") ? "" : "/"}${cleanPath}`;
+  };
 
-		if (!title.trim()) {
-			setError('Title is required.')
-			return
-		}
-		if (!imageFile) {
-			setError('Please select an image to upload.')
-			return
-		}
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-		const formData = new FormData()
-		formData.append('title', title.trim())
-		formData.append('category', category)
-		formData.append('image', imageFile)
+    if (!title.trim()) {
+      toast.error("Title is required.");
+      return;
+    }
+    if (!initialWork && !previewImage) {
+      toast.error("Please select a preview image.");
+      return;
+    }
 
-		try {
-			setLoading(true)
-			const token = localStorage.getItem('adminToken')
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/works/upload`, {
-				method: 'POST',
-				headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-				body: formData
-			})
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("category", category);
+    formData.append("description", description.trim());
+    formData.append("tags", tagsInput.trim());
+    formData.append("link", link.trim());
 
-			const data = await response.json()
-			if (!response.ok) {
-				throw new Error(data.message || 'Upload failed')
-			}
+    if (previewImage) formData.append("image", previewImage);
 
-			setSuccess('Work uploaded successfully.')
-			setTitle('')
-			setImageFile(null)
-			if (onUploaded) {
-				onUploaded(category)
-			}
-		} catch (err) {
-			setError(err.message)
-		} finally {
-			setLoading(false)
-		}
-	}
+    galleryImages.forEach((file) => {
+      formData.append("galleryImages", file);
+    });
 
-	return (
-		<div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-xl shadow-slate-950/30">
-			<h2 className="text-xl font-semibold">New work</h2>
-			<p className="mt-2 text-sm text-slate-400">Upload an image and select the category.</p>
+    if (initialWork && existingGalleryImages.length > 0) {
+      formData.append(
+        "existingGalleryImages",
+        JSON.stringify(existingGalleryImages),
+      );
+    }
 
-			<form onSubmit={handleSubmit} className="mt-6 space-y-5">
-				<label className="block text-sm font-medium text-slate-300">
-					Title
-					<input
-						type="text"
-						value={title}
-						onChange={(event) => setTitle(event.target.value)}
-						placeholder="e.g. Skyline Logo"
-						className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring"
-						required
-					/>
-				</label>
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("adminToken");
 
-				<label className="block text-sm font-medium text-slate-300">
-					Category
-					<select
-						value={category}
-						onChange={(event) => setCategory(event.target.value)}
-						className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring"
-					>
-						{categories.map((item) => (
-							<option key={item} value={item} className="bg-slate-950">
-								{item}
-							</option>
-						))}
-					</select>
-				</label>
+      const method = initialWork ? "PUT" : "POST";
+      const url = initialWork
+        ? `${import.meta.env.VITE_API_URL}/api/works/${initialWork._id}`
+        : `${import.meta.env.VITE_API_URL}/api/works/upload`;
 
-				<label className="block text-sm font-medium text-slate-300">
-					Image file
-					<input
-						type="file"
-						accept="image/*"
-						onChange={(event) => setImageFile(event.target.files?.[0] || null)}
-						className="mt-2 w-full rounded-xl border border-dashed border-slate-700/80 bg-slate-950/40 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-900"
-					/>
-				</label>
+      const response = await fetch(url, {
+        method: method,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+      });
 
-				<button
-					type="submit"
-					disabled={loading}
-					className="w-full rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
-				>
-					{loading ? 'Uploading...' : 'Upload work'}
-				</button>
-			</form>
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.message || (initialWork ? "Update failed" : "Upload failed"),
+        );
+      }
 
-			{error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
-			{success && <p className="mt-4 text-sm text-emerald-300">{success}</p>}
-		</div>
-	)
+      toast.success(
+        initialWork
+          ? "Work updated successfully."
+          : "Work uploaded successfully.",
+      );
+      setTitle("");
+      setDescription("");
+      setTagsInput("");
+      setLink("");
+      setPreviewImage(null);
+      setPreviewImageUrl("");
+      setGalleryImages([]);
+      setExistingGalleryImages([]);
+      if (onUploaded) {
+        onUploaded(category);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-xl shadow-slate-950/30 max-h-[85vh] overflow-y-auto custom-scrollbar">
+      <h2 className="text-xl font-semibold">New work</h2>
+      <p className="mt-2 text-sm text-slate-400">
+        Upload images and fill project details below.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <label className="block text-sm font-medium text-slate-300">
+          Work Title
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="e.g. Skyline Logo"
+            className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring"
+            required
+          />
+        </label>
+
+        <label className="block text-sm font-medium text-slate-300">
+          Category
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring"
+          >
+            {categories.map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col">
+            <span className="block text-sm font-medium text-slate-300 mb-2">
+              Preview Image (For List)
+            </span>
+            <label className="relative rounded-2xl border border-dashed border-slate-700/80 bg-slate-950/40 flex flex-col items-center justify-center text-center overflow-hidden group min-h-[160px] cursor-pointer hover:border-purple-500/50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPreviewImage(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              {previewImage || previewImageUrl ? (
+                <img
+                  src={
+                    previewImage
+                      ? URL.createObjectURL(previewImage)
+                      : getFileUrl(previewImageUrl)
+                  }
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 transition-opacity"
+                  alt="Preview"
+                />
+              ) : null}
+              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/30 transition-colors relative z-20">
+                <svg
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  height="20"
+                  width="20"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </div>
+              <div className="text-sm font-semibold text-slate-200 relative z-20">
+                {previewImage
+                  ? previewImage.name
+                  : previewImageUrl
+                    ? "Change Image"
+                    : "Upload"}
+              </div>
+              <div className="text-xs text-slate-400 mt-1 relative z-20 bg-slate-900/60 px-2 py-0.5 rounded backdrop-blur-sm">
+                PNG, JPG or WebP
+              </div>
+            </label>
+            <p className="mt-2 text-[11px] text-slate-500 italic">
+              Image shown in portfolio grid. Won't appear in gallery.
+            </p>
+          </div>
+
+          <div className="flex flex-col">
+            <span className="block text-sm font-medium text-slate-300 mb-2">
+              Main Image (For Gallery)
+            </span>
+            <div className="relative rounded-2xl border border-dashed border-slate-700/80 bg-slate-950/40 p-6 flex flex-col items-center justify-center text-center overflow-hidden group min-h-[160px] hover:border-purple-500/50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) =>
+                  setGalleryImages((prev) => [
+                    ...prev,
+                    ...Array.from(e.target.files || []),
+                  ])
+                }
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                title="Click to add more images"
+              />
+              <div className="flex flex-col items-center pointer-events-none relative z-20">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/30 transition-colors">
+                  <svg
+                    stroke="currentColor"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    height="20"
+                    width="20"
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+                <div className="text-sm font-semibold text-slate-200">
+                  {galleryImages.length + existingGalleryImages.length > 0
+                    ? `${galleryImages.length + existingGalleryImages.length} images total`
+                    : "Upload Images"}
+                </div>
+              </div>
+
+              {/* Clear images button on top layer */}
+              {galleryImages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setGalleryImages([]);
+                  }}
+                  className="absolute top-2 right-2 z-20 px-2 py-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+                >
+                  Clear New
+                </button>
+              )}
+            </div>
+
+            {/* Thumbnail Previews */}
+            {(existingGalleryImages.length > 0 || galleryImages.length > 0) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {existingGalleryImages.map((imgUrl, idx) => (
+                  <div
+                    key={`exist-${idx}`}
+                    className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-700 group shadow-lg"
+                  >
+                    <img
+                      src={getFileUrl(imgUrl)}
+                      className="w-full h-full object-cover bg-slate-800"
+                      alt="Existing"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExistingGalleryImages((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                      className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg
+                        className="w-5 h-5 text-rose-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {galleryImages.map((file, idx) => {
+                  const objectUrl = URL.createObjectURL(file);
+                  return (
+                    <div
+                      key={`new-${idx}`}
+                      className="relative w-24 h-24 rounded-xl overflow-hidden border border-purple-500/50 group shadow-lg"
+                    >
+                      <img
+                        src={objectUrl}
+                        className="w-full h-full object-cover"
+                        alt="New"
+                      />
+                      <span className="absolute top-0 right-0 bg-purple-500 text-white text-[9px] font-bold px-1 rounded-bl leading-tight">
+                        NEW
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          URL.revokeObjectURL(objectUrl);
+                          setGalleryImages((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          );
+                        }}
+                        className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg
+                          className="w-5 h-5 text-rose-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-slate-500 italic">
+              {" "}
+              Images for the project details gallery.
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-800/50">
+          <label className="block text-sm font-medium text-slate-300">
+            Description (Optional)
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Briefly describe this project..."
+              rows={3}
+              className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring resize-none"
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-slate-300">
+            Tags (comma separated)
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(event) => setTagsInput(event.target.value)}
+              placeholder="e.g. UX Design, Web, Mobile"
+              className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-300">
+            External Link (Optional)
+            <input
+              type="url"
+              value={link}
+              onChange={(event) => setLink(event.target.value)}
+              placeholder="https://..."
+              className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring"
+            />
+          </label>
+        </div>
+
+        <div className="flex gap-3 pt-6">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 rounded-xl border border-slate-700/80 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/50"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-[2] rounded-xl bg-[#c084fc] px-4 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_15px_rgba(192,132,252,0.4)] transition hover:bg-[#d8b4fe] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading
+              ? initialWork
+                ? "Updating..."
+                : "Creating..."
+              : initialWork
+                ? "Update Work"
+                : "Create Work"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
-export default UploadForm
+export default UploadForm;

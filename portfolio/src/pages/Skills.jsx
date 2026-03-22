@@ -40,7 +40,7 @@ function Skills({ withTopOffset = true }) {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: false, amount: 0.4 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
@@ -59,7 +59,7 @@ function Skills({ withTopOffset = true }) {
               key={category.category}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
+              viewport={{ once: false, amount: 0.2 }}
               transition={{ duration: 0.55, delay: categoryIndex * 0.12, ease: 'easeOut' }}
               className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10"
             >
@@ -76,7 +76,7 @@ function Skills({ withTopOffset = true }) {
                     key={skill.name}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
+                    viewport={{ once: false, amount: 0.3 }}
                     transition={{
                       duration: 0.5,
                       delay: categoryIndex * 0.1 + skillIndex * 0.07,
@@ -94,7 +94,7 @@ function Skills({ withTopOffset = true }) {
                       <motion.div
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
-                        viewport={{ once: true, amount: 0.5 }}
+                        viewport={{ once: false, amount: 0.5 }}
                         transition={{
                           duration: 1.1,
                           delay: categoryIndex * 0.1 + skillIndex * 0.07 + 0.2,

@@ -2,16 +2,19 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom';
 
 function AdminLogin() {
+  const navigate = useNavigate();
+
   React.useEffect(() => {
-    localStorage.removeItem('adminToken')
-  }, [])
+    if (localStorage.getItem('adminToken')) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
-  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

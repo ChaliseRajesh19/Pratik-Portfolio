@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaInstagram, FaLinkedin, FaFacebook, FaTwitter, FaChevronDown } from 'react-icons/fa'
+import { SectionHeader } from '../components/SectionHeader'
 
 // ── CUSTOM ANIMATED SELECT COMPONENT ──
 const CustomSelect = ({ label, options, value, onChange, name }) => {
@@ -22,17 +23,23 @@ const CustomSelect = ({ label, options, value, onChange, name }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full rounded-xl border ${isOpen ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-blue-900/40'} bg-[#020617]/60 px-4 pt-6 pb-2 text-left focus:outline-none transition-all duration-300 cursor-pointer flex justify-between items-center backdrop-blur-md hover:border-blue-500/50`}
+        className={`w-full rounded-xl border ${isOpen ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-blue-900/40'} bg-[#020617]/60 px-4 pt-6 pb-2 text-left focus:outline-none transition-all duration-300 cursor-pointer flex justify-between items-center backdrop-blur-md hover:border-blue-500/50 min-h-[56px]`}
       >
-        <span className={value ? "text-slate-100 font-medium" : "text-slate-500"}>
-          {value || `Choose ${label}...`}
+        {/* Only render the value text when a value is actually selected */}
+        <span className="text-slate-100 font-medium">
+          {value || ''}
         </span>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
           <FaChevronDown className={`text-sm transition-colors ${isOpen ? 'text-blue-400' : 'text-slate-500'}`} />
         </motion.div>
       </button>
 
-      <span className={`absolute left-4 transition-all pointer-events-none ${value || isOpen ? 'top-2 text-[10px] text-blue-400' : 'top-4 text-xs text-slate-400'} font-bold uppercase tracking-widest`}>
+      {/* Label: floats to top when value selected or open, otherwise acts as centered placeholder */}
+      <span className={`absolute left-4 transition-all duration-200 pointer-events-none font-bold uppercase tracking-widest ${
+        value || isOpen
+          ? 'top-2 text-[10px] text-blue-400'
+          : 'top-1/2 -translate-y-1/2 text-xs text-slate-400'
+      }`}>
         {label}
       </span>
 
@@ -134,7 +141,7 @@ function Contact({ withTopOffset = true }) {
   ]
 
   return (
-    <section className={`relative min-h-screen overflow-hidden bg-[#020617] text-slate-100 py-20 ${withTopOffset ? 'mt-16' : 'mt-0'}`}>
+    <section className={`relative min-h-screen overflow-hidden bg-[#020617] text-slate-100 py-12 md:py-20 ${withTopOffset ? 'mt-16' : 'mt-0'}`}>
       
       {/* Premium Deep Blue Abstract Glows */}
       <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[120px]" />
@@ -143,19 +150,11 @@ function Contact({ withTopOffset = true }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header */}
-        <motion.div
-           initial={{ opacity: 0, y: 30 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true, amount: 0.5 }}
-           transition={{ duration: 0.6 }}
-           className="text-center max-w-2xl mx-auto mb-16"
-        >
-          <p className="text-sm uppercase tracking-[0.35em] text-blue-400 mb-3 font-black">Let's build something</p>
-          <h2 className="text-4xl md:text-5xl font-black text-white">Contact Me</h2>
-          <p className="text-slate-400 mt-4 leading-relaxed font-medium">
-            Tell me about your project, goals, and timeline. I will reply within 24-48 hours.
-          </p>
-        </motion.div>
+        <SectionHeader
+          label="Let's Build Something"
+          title="Contact Me"
+          subtitle="Tell me about your project, goals, and timeline. I will reply within 24-48 hours."
+        />
 
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-start">
           
@@ -163,7 +162,7 @@ function Contact({ withTopOffset = true }) {
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{ duration: 0.7 }}
             className="lg:col-span-3 rounded-[2rem] border border-blue-900/30 bg-[#020617]/40 backdrop-blur-2xl p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
           >
@@ -264,7 +263,7 @@ function Contact({ withTopOffset = true }) {
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{ duration: 0.7, delay: 0.2 }}
             className="lg:col-span-2 hidden lg:flex flex-col gap-6"
             style={{ perspective: 1000 }}
@@ -308,7 +307,7 @@ function Contact({ withTopOffset = true }) {
               <h4 className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold mb-6">Social Connect</h4>
               <div className="flex gap-4">
                 {[
-                  { icon: FaFacebook, href: 'https://facebook.com/creativepratik16' },
+                  { icon: FaFacebook, href: 'https://facebook.com/creativepratik22' },
                   { icon: FaLinkedin, href: 'https://linkedin.com/in/creativepratik22/' },
                   { icon: FaTwitter, href: 'https://twitter.com/creativepratik_' },
                   { icon: FaInstagram, href: 'https://instagram.com/creativepratik22' },

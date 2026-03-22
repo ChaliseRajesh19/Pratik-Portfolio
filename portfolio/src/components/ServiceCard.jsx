@@ -36,7 +36,7 @@ function ServiceCard({ icon, title, description, index }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
+      viewport={{ once: false, amount: 0.2 }}
       transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
       // Intercept ref for motion and our own interactions
       style={{ perspective: '1000px' }}
@@ -57,40 +57,59 @@ function ServiceCard({ icon, title, description, index }) {
       >
         {/* Glow behind card on hover */}
         <div
-          className="absolute inset-0 rounded-2xl transition-opacity duration-300"
+          className="absolute inset-0 rounded-2xl transition-opacity duration-500"
           style={{
             opacity: hovered ? 1 : 0,
-            boxShadow: '0 0 40px rgba(34,211,238,0.15), inset 0 0 0 1px rgba(34,211,238,0.25)',
+            boxShadow: '0 0 30px rgba(6, 182, 212, 0.15), inset 0 0 0 1px rgba(6, 182, 212, 0.3)',
           }}
         />
 
-        {/* Card backdrop */}
-        <div className="absolute inset-0 rounded-2xl border border-slate-700/50 bg-slate-800/60 backdrop-blur-md" />
+        {/* Card backdrop - Deep Premium Blue */}
+        <div className="absolute inset-0 rounded-2xl border border-blue-900/40 bg-[#061230]/80 backdrop-blur-xl overflow-hidden group-hover:bg-[#061230]/90 transition-colors duration-500">
+          {/* Sweeping diagonal gradient line on hover */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+            <div className="absolute top-0 left-0 w-[200%] h-[200%] bg-gradient-to-br from-transparent via-cyan-500/10 to-transparent -translate-x-[100%] -translate-y-[100%] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-1000 ease-out" />
+          </div>
+        </div>
 
         {/* Mouse follow glare */}
         {hovered && !isMobile && (
           <div
-            className="absolute inset-0 rounded-2xl pointer-events-none"
+            className="absolute inset-0 rounded-2xl pointer-events-none z-10"
             style={{
-              background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.06), transparent 70%)`,
+              background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.08), transparent 60%)`,
             }}
           />
         )}
 
         {/* Card Content (translated out in Z-space) */}
-        <div className="relative h-full p-8 flex flex-col items-start" style={{ transform: 'translateZ(30px)' }}>
-          {/* Icon Badge */}
-          <div className="w-14 h-14 rounded-2xl bg-slate-900 shadow-inner flex items-center justify-center mb-6 border border-slate-700/50 group-hover:border-cyan-500/50 transition-colors duration-300">
-            <img src={icon} alt={title} className="w-8 h-8 object-contain" />
-          </div>
+        <div 
+          className="relative h-full p-8 flex flex-col items-start z-20" 
+          style={{ 
+            transform: hovered ? 'translateZ(40px)' : 'translateZ(20px)',
+            transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)' 
+          }}
+        >
+          {/* Icon Badge & Title */}
+          <div className="flex items-center gap-5 mb-5 w-full">
+            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-900/40 to-[#020617] shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] flex items-center justify-center flex-shrink-0 border border-blue-800/30 group-hover:border-cyan-400/50 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] transition-all duration-500">
+              <img src={icon} alt={title} className="w-full h-full object-cover" />
+            </div>
 
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent mb-3 group-hover:from-cyan-400 group-hover:to-blue-500 transition-all duration-300">
-            {title}
-          </h3>
+            <h3 className="text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors duration-300">
+              {title}
+            </h3>
+          </div>
           
-          <p className="text-slate-400 text-sm leading-relaxed border-l-2 border-slate-700 pl-4 group-hover:border-cyan-500 transition-colors duration-300 mt-2">
-            {description}
-          </p>
+          <div className="relative mt-2 pl-4">
+            {/* Animated left border line */}
+            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-blue-900/50 rounded-full overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-cyan-400 -translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+            </div>
+            <p className="text-slate-400 text-sm leading-relaxed group-hover:text-slate-300 transition-colors duration-300">
+              {description}
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>

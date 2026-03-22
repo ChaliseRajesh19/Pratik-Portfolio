@@ -1,31 +1,82 @@
 import React from 'react'
 
-function UploadCard({ work, onDelete }) {
-	return (
-		<div className="flex items-center gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4">
-			<div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-900">
-				<img
-					src={work.imageURL}
-					alt={work.title}
-					className="h-full w-full object-cover"
-					loading="lazy"
-				/>
-			</div>
-			<div className="min-w-0 flex-1">
-				<p className="text-xs uppercase tracking-[0.2em] text-emerald-300/80">{work.category}</p>
-				<div className="mt-1 flex items-center justify-between gap-3">
-					<h3 className="truncate text-sm font-semibold text-slate-100">{work.title}</h3>
-					<button
-						type="button"
-						onClick={() => onDelete?.(work)}
-						className="text-xs font-semibold text-rose-300 transition hover:text-rose-200"
-					>
-						Delete
-					</button>
-				</div>
-			</div>
-		</div>
-	)
+const TrashIcon = () => (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
+
+const EditIcon = () => (
+  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+  </svg>
+)
+
+function UploadCard({ work, onEdit, onDelete }) {
+  const [hovered, setHovered] = React.useState(false)
+  const imageSrc = work.imageURL?.startsWith('http')
+    ? work.imageURL
+    : `${import.meta.env.VITE_API_URL}${work.imageURL}`
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col bg-[#11111a] rounded-[20px] overflow-hidden border transition-all duration-300 relative group"
+      style={{
+        borderColor: hovered ? 'rgba(168,85,247,0.3)' : 'rgba(51,65,85,0.4)',
+        boxShadow: hovered ? '0 8px 30px rgba(0,0,0,0.4)' : 'none'
+      }}
+    >
+      {/* Top badges (mocked as Published for design parity) */}
+      <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold tracking-wider">
+          Published
+        </span>
+      </div>
+
+      {/* Image half */}
+      <div className="w-full aspect-square md:aspect-[4/3] bg-slate-900 overflow-hidden relative">
+        <img
+          src={imageSrc}
+          alt={work.title}
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        />
+        {/* Subtle overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#11111a] via-transparent to-transparent opacity-60" />
+      </div>
+
+      {/* Content area */}
+      <div className="p-5 flex flex-col flex-1">
+        <p className="text-[11px] font-bold tracking-widest text-[#a855f7] uppercase mb-1.5">
+          {work.category}
+        </p>
+        <h3 className="text-[17px] font-bold text-slate-100 mb-2 leading-tight line-clamp-2">
+          {work.title}
+        </h3>
+        <p className="text-[13px] text-slate-400 leading-relaxed line-clamp-2 mb-6 flex-1">
+          {work.description}
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 mt-auto">
+          <button
+            onClick={() => onEdit?.(work)}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-[#a855f7] text-[#a855f7] font-semibold text-sm transition-colors hover:bg-[#a855f7] hover:text-white"
+          >
+            <EditIcon /> Edit
+          </button>
+          <button
+            onClick={() => onDelete?.(work)}
+            className="flex items-center justify-center p-2 rounded-xl border border-rose-500/50 text-rose-500 transition-colors hover:bg-rose-500 hover:text-white"
+            title="Delete work"
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default UploadCard
