@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl, assetUrl } from "../lib/api";
 
 // ─── Work details modal ──────────────────────────────────────────────────────────
 function WorkDetailsModal({ work, onClose }) {
@@ -12,9 +13,7 @@ function WorkDetailsModal({ work, onClose }) {
     
   const parsedImages = images.map(img => {
     if (!img) return "";
-    if (img.startsWith("http")) return img;
-    const cleanPath = img.replace(/\\/g, '/');
-    return `${import.meta.env.VITE_API_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+    return assetUrl(img);
   });
 
   useEffect(() => {
@@ -206,9 +205,7 @@ function WorkCard({ work, index, onClick }) {
   const [hovered, setHovered] = useState(false);
   const accent = ACCENT[index % ACCENT.length];
 
-  const src = work.imageURL?.startsWith("http")
-    ? work.imageURL
-    : `${import.meta.env.VITE_API_URL}${work.imageURL}`;
+  const src = assetUrl(work.imageURL);
 
   return (
     <motion.div
@@ -359,7 +356,7 @@ function WorkPages() {
   const [activeTag, setActiveTag] = useState("All");
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+    fetch(apiUrl('/api/categories'))
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data))
@@ -370,7 +367,7 @@ function WorkPages() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/works/${category}`)
+    fetch(apiUrl(`/api/works/${category}`))
       .then((r) => r.json())
       .then((data) => setWorks(Array.isArray(data) ? data : []))
       .catch(() => setWorks([]))

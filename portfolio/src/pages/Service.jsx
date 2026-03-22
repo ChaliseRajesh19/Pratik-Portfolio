@@ -3,13 +3,14 @@ import { motion } from 'framer-motion'
 import ServiceCard from '../components/ServiceCard'
 import { SectionHeader } from '../components/SectionHeader'
 import { GridConnections } from '../components/GridConnections'
+import { apiUrl, assetUrl } from '../lib/api'
 
 function Service({ withTopOffset = true }) {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/services`)
+    fetch(apiUrl('/api/services'))
       .then(res => res.json())
       .then(data => {
         setServices(Array.isArray(data) ? data : [])
@@ -45,9 +46,7 @@ function Service({ withTopOffset = true }) {
               </div>
             ) : services.length > 0 ? (
               services.map((service, index) => {
-                const iconSrc = service.imageURL?.startsWith('http') 
-                  ? service.imageURL 
-                  : `${import.meta.env.VITE_API_URL}${service.imageURL}`
+                const iconSrc = assetUrl(service.imageURL)
                 return (
                   <ServiceCard 
                     key={service._id} 

@@ -1,12 +1,11 @@
 import React from 'react'
+import { assetUrl } from '../lib/api'
 
 function ImageCard({ work }) {
   if (!work) return null;
 
   const imageSrc = work.imageURL
-    ? work.imageURL.startsWith('http')
-      ? work.imageURL
-      : `${import.meta.env.VITE_API_URL}${work.imageURL}`
+    ? assetUrl(work.imageURL)
     : '';
 
   const description = work.description || '';

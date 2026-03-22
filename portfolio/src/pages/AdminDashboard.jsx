@@ -9,6 +9,7 @@ import CategoryForm from '../components/admin/CategoryForm'
 import CategoryList from '../components/admin/CategoryList'
 import { useNavigate, Link } from 'react-router-dom'
 import logoimg from '../assets/favicon.png'
+import { apiUrl } from '../lib/api'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const WorksIcon = () => (
@@ -292,7 +293,7 @@ function AdminDashboard() {
 
   // Fetch dynamic categories from API
   React.useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+    fetch(apiUrl('/api/categories'))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

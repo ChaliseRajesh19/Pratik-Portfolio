@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import CategoryForm from './CategoryForm'
+import { apiUrl } from '../../lib/api'
 
 function CategoryList({ refreshKey }) {
     const [categories, setCategories] = React.useState([])
@@ -16,7 +17,7 @@ function CategoryList({ refreshKey }) {
     const loadCategories = async () => {
             setLoading(true)
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+                const response = await fetch(apiUrl('/api/categories'))
                 const data = await response.json()
                 if (!response.ok) throw new Error(data.message || 'Failed to load categories')
                 setCategories(data)
@@ -36,7 +37,7 @@ function CategoryList({ refreshKey }) {
         setIsDeleting(true)
         try {
             const token = localStorage.getItem('adminToken')
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${deleteItem._id}`, {
+            const response = await fetch(apiUrl(`/api/categories/${deleteItem._id}`), {
                 method: 'DELETE',
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             })

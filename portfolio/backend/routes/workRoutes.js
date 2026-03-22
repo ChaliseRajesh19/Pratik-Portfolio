@@ -44,6 +44,15 @@ router.post('/upload', upload.fields([
     }
 });
 
+router.get('/', async (req, res) => {
+  try {
+    const works = await Work.find().sort({ createdAt: -1 });
+    res.status(200).json(works);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch works', error: error.message });
+  }
+});
+
 router.get('/:category', async (req, res) => {
   try {
     const works = await Work.find({ category: req.params.category });

@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import BlogForm from './BlogForm'
+import { apiUrl } from '../../lib/api'
 
 function BlogList({ refreshKey, onEdit }) {
 	const [blogs, setBlogs] = React.useState([])
@@ -16,7 +17,7 @@ function BlogList({ refreshKey, onEdit }) {
 	const loadBlogs = async () => {
 			setLoading(true)
 			try {
-				const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs`, {
+				const response = await fetch(apiUrl('/api/blogs'), {
 					signal: controller.signal
 				})
 				const data = await response.json()
@@ -42,7 +43,7 @@ function BlogList({ refreshKey, onEdit }) {
 		setIsDeleting(true)
 		try {
 			const token = localStorage.getItem('adminToken')
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${deleteItem._id}`, {
+			const response = await fetch(apiUrl(`/api/blogs/${deleteItem._id}`), {
 				method: 'DELETE',
 				headers: token ? { Authorization: `Bearer ${token}` } : undefined
 			})

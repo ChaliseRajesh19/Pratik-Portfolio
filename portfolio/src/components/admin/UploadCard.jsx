@@ -1,4 +1,5 @@
 import React from 'react'
+import { assetUrl } from '../../lib/api'
 
 const TrashIcon = () => (
   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -14,9 +15,7 @@ const EditIcon = () => (
 
 function UploadCard({ work, onEdit, onDelete }) {
   const [hovered, setHovered] = React.useState(false)
-  const imageSrc = work.imageURL?.startsWith('http')
-    ? work.imageURL
-    : `${import.meta.env.VITE_API_URL}${work.imageURL}`
+  const imageSrc = assetUrl(work.imageURL)
 
   return (
     <div

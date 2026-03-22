@@ -4,6 +4,7 @@ import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import UploadForm from './UploadForm'
 import { toast } from 'react-hot-toast'
+import { apiUrl } from '../../lib/api'
 
 function UploadList({ category, categories, onCategoryChange, refreshKey, onAddWork }) {
   const [works, setWorks] = React.useState([])
@@ -31,8 +32,8 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
       setLoading(true)
       try {
         const url = fetchCategory 
-          ? `${import.meta.env.VITE_API_URL}/api/works/${fetchCategory}`
-          : `${import.meta.env.VITE_API_URL}/api/works` // Assuming this endpoint gets all works
+          ? apiUrl(`/api/works/${fetchCategory}`)
+          : apiUrl('/api/works')
           
         const response = await fetch(url, { signal: controller.signal })
         const data = await response.json()
@@ -56,7 +57,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
     setIsDeleting(true)
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/works/${deleteWorkItem._id}`, {
+      const response = await fetch(apiUrl(`/api/works/${deleteWorkItem._id}`), {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       })

@@ -1,6 +1,7 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
 import BlogEditor from './BlogEditor'
+import { apiUrl } from '../../lib/api'
 
 function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel }) {
 	const [title, setTitle] = React.useState('')
@@ -69,7 +70,7 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 			if (coverImage) {
 				const formData = new FormData()
 				formData.append('image', coverImage)
-				const uploadRes = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
+				const uploadRes = await fetch(apiUrl('/api/upload'), {
 					method: 'POST',
 					headers: token ? { Authorization: `Bearer ${token}` } : {},
 					body: formData,
@@ -82,8 +83,8 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 
 			const response = await fetch(
 				isEditing
-					? `${import.meta.env.VITE_API_URL}/api/blogs/${initialBlog._id}`
-					: `${import.meta.env.VITE_API_URL}/api/blogs/create`,
+					? apiUrl(`/api/blogs/${initialBlog._id}`)
+					: apiUrl('/api/blogs/create'),
 				{
 					method: isEditing ? 'PUT' : 'POST',
 					headers: {

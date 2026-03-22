@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BlogCard from '../components/BlogCard'
+import { API_BASE_URL, apiUrl, assetUrl } from '../lib/api'
 
 export default function Blog({ withTopOffset = true }) {
   const [blogs, setBlogs] = useState([])
@@ -12,8 +13,7 @@ export default function Blog({ withTopOffset = true }) {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL
-        if (!apiUrl) {
+        if (!API_BASE_URL) {
           setBlogs([
             { _id: 'brand-identity-tips', title: 'Brand Identity: Why Consistency is Everything', excerpt: 'Your brand is more than just a logo. It is the feeling people get when they interact with your business. Consistent visual language builds trust.', content: 'Your brand is more than just a logo.', date: new Date().toISOString(), author: 'Pratik', tags: ['Branding', 'Design'], coverImage: '' },
             { _id: 'logo-design-process', title: 'My 5-Step Logo Design Process', excerpt: 'Great logos are not created by accident. Behind every iconic mark is a structured process of research, ideation, and refinement.', content: 'Great logos are not created by accident.', date: new Date().toISOString(), author: 'Pratik', tags: ['Logo', 'Process'], coverImage: '' },
@@ -22,7 +22,7 @@ export default function Blog({ withTopOffset = true }) {
           ])
           return
         }
-        const response = await fetch(`${apiUrl}/api/blogs`)
+        const response = await fetch(apiUrl('/api/blogs'))
         if (!response.ok) throw new Error('Failed to fetch blogs')
         const contentType = response.headers.get('content-type')
         if (!contentType?.includes('application/json'))
@@ -196,7 +196,7 @@ export default function Blog({ withTopOffset = true }) {
                       readTime={estimateReadTime(blog.content)}
                       author={blog.author}
                       tags={blog.tags}
-                      coverImage={blog.coverImage || ''}
+                      coverImage={assetUrl(blog.coverImage)}
                     />
                   </motion.div>
                 ))

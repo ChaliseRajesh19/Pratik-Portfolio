@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import ProjectCards3D from '../components/three/ProjectCards3D'
 import { SectionHeader } from '../components/SectionHeader'
+import { apiUrl } from '../lib/api'
 
 function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) {
   const containerClass = withTopOffset ? 'min-h-screen mt-16' : 'mt-0'
@@ -11,7 +12,7 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
 
   React.useEffect(() => {
     const controller = new AbortController()
-    fetch(`${import.meta.env.VITE_API_URL}/api/categories`, { signal: controller.signal })
+    fetch(apiUrl('/api/categories'), { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

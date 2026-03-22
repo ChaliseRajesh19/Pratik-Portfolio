@@ -1,5 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
+import { apiUrl } from '../../lib/api'
 
 function ServiceForm({ onCreated, initialService, onCancel }) {
     const [title, setTitle] = React.useState('')
@@ -37,8 +38,8 @@ function ServiceForm({ onCreated, initialService, onCancel }) {
             
             const method = initialService ? 'PUT' : 'POST'
             const url = initialService
-                ? `${import.meta.env.VITE_API_URL}/api/services/${initialService._id}`
-                : `${import.meta.env.VITE_API_URL}/api/services`
+                ? apiUrl(`/api/services/${initialService._id}`)
+                : apiUrl('/api/services')
 
             const response = await fetch(url, {
                 method: method,

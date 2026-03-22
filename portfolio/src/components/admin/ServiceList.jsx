@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import ServiceForm from './ServiceForm'
+import { apiUrl, assetUrl } from '../../lib/api'
 
 function ServiceList({ refreshKey }) {
     const [services, setServices] = React.useState([])
@@ -16,7 +17,7 @@ function ServiceList({ refreshKey }) {
     const loadServices = async () => {
             setLoading(true)
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/services`)
+                const response = await fetch(apiUrl('/api/services'))
                 const data = await response.json()
                 if (!response.ok) throw new Error(data.message || 'Failed to load services')
                 setServices(data)
@@ -36,7 +37,7 @@ function ServiceList({ refreshKey }) {
         setIsDeleting(true)
         try {
             const token = localStorage.getItem('adminToken')
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/services/${deleteItem._id}`, {
+            const response = await fetch(apiUrl(`/api/services/${deleteItem._id}`), {
                 method: 'DELETE',
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             })
@@ -110,7 +111,7 @@ function ServiceList({ refreshKey }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredServices.map(service => (
                         <div key={service._id} className="rounded-2xl border border-slate-800/70 bg-slate-950/50 p-5 flex flex-col items-center text-center">
-                            <img src={service.imageURL.startsWith('http') ? service.imageURL : `${import.meta.env.VITE_API_URL}${service.imageURL}`} alt={service.title} className="w-16 h-16 object-cover rounded-xl mb-4" />
+                            <img src={assetUrl(service.imageURL)} alt={service.title} className="w-16 h-16 object-cover rounded-xl mb-4" />
                             <h3 className="text-base font-semibold text-slate-100">{service.title}</h3>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={() => setEditItem(service)} className="rounded-full border border-slate-600/60 px-4 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-400">

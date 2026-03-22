@@ -1,5 +1,6 @@
 import React from "react";
 import { toast } from "react-hot-toast";
+import { apiUrl, assetUrl } from "../../lib/api";
 
 function UploadForm({
   categories,
@@ -37,9 +38,7 @@ function UploadForm({
 
   const getFileUrl = (url) => {
     if (!url) return "";
-    if (url.startsWith("http")) return url;
-    const cleanPath = url.replace(/\\/g, "/");
-    return `${import.meta.env.VITE_API_URL}${cleanPath.startsWith("/") ? "" : "/"}${cleanPath}`;
+    return assetUrl(url);
   };
 
   const handleSubmit = async (event) => {
@@ -80,8 +79,8 @@ function UploadForm({
 
       const method = initialWork ? "PUT" : "POST";
       const url = initialWork
-        ? `${import.meta.env.VITE_API_URL}/api/works/${initialWork._id}`
-        : `${import.meta.env.VITE_API_URL}/api/works/upload`;
+        ? apiUrl(`/api/works/${initialWork._id}`)
+        : apiUrl('/api/works/upload');
 
       const response = await fetch(url, {
         method: method,

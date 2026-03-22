@@ -1,5 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
+import { apiUrl } from '../../lib/api'
 
 const ICON_CHOICES = [
   '🎨','✏️','🖌️','📐','📏','🖊️','🗂️','🖼️','💡','⭐',
@@ -36,8 +37,8 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
 
             const method = initialCategory ? 'PUT' : 'POST'
             const url = initialCategory
-                ? `${import.meta.env.VITE_API_URL}/api/categories/${initialCategory._id}`
-                : `${import.meta.env.VITE_API_URL}/api/categories`
+                ? apiUrl(`/api/categories/${initialCategory._id}`)
+                : apiUrl('/api/categories')
 
             const response = await fetch(url, {
                 method: method,

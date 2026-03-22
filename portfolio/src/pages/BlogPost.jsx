@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
+import { API_BASE_URL, apiUrl, assetUrl } from "../lib/api";
 
 /* ── Reading progress bar ── */
 function ReadingProgress() {
@@ -123,8 +124,7 @@ export default function BlogPost() {
       setLoading(true);
       setError("");
       try {
-        const apiUrl = import.meta.env.VITE_API_URL;
-        if (!apiUrl) {
+        if (!API_BASE_URL) {
           const mockBlogs = {
             "brand-identity-tips": {
               title: "Brand Identity: Why Consistency is Everything",
@@ -162,7 +162,7 @@ export default function BlogPost() {
           );
           return;
         }
-        const res = await fetch(`${apiUrl}/api/blogs/${id}`, {
+        const res = await fetch(apiUrl(`/api/blogs/${id}`), {
           signal: controller.signal,
         });
         const ct = res.headers.get("content-type");
@@ -279,7 +279,7 @@ export default function BlogPost() {
               <div className="relative overflow-hidden rounded-2xl mb-6 h-64 sm:h-80 bg-gradient-to-br from-slate-800 to-slate-900">
                 {blog.coverImage ? (
                   <img
-                    src={blog.coverImage}
+                    src={assetUrl(blog.coverImage)}
                     alt={blog.title}
                     className="w-full h-full object-cover"
                   />
