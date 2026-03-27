@@ -1,10 +1,11 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
 import Service from '../models/Service.js';
 import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     const { title, description } = req.body;
     if (!req.file?.path) {
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     const { title, description } = req.body;
     let updateData = { title, description };
@@ -53,7 +54,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const deletedService = await Service.findByIdAndDelete(req.params.id);
     if (!deletedService) {

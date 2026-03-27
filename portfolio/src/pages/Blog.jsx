@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BlogCard from '../components/BlogCard'
-import { API_BASE_URL, apiUrl, assetUrl } from '../lib/api'
+import api, { assetUrl, getErrorMessage } from '../lib/api'
 
 export default function Blog({ withTopOffset = true }) {
   const [blogs, setBlogs] = useState([])
@@ -13,23 +13,10 @@ export default function Blog({ withTopOffset = true }) {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        if (!API_BASE_URL) {
-          setBlogs([
-            { _id: 'brand-identity-tips', title: 'Brand Identity: Why Consistency is Everything', excerpt: 'Your brand is more than just a logo. It is the feeling people get when they interact with your business. Consistent visual language builds trust.', content: 'Your brand is more than just a logo.', date: new Date().toISOString(), author: 'Pratik', tags: ['Branding', 'Design'], coverImage: '' },
-            { _id: 'logo-design-process', title: 'My 5-Step Logo Design Process', excerpt: 'Great logos are not created by accident. Behind every iconic mark is a structured process of research, ideation, and refinement.', content: 'Great logos are not created by accident.', date: new Date().toISOString(), author: 'Pratik', tags: ['Logo', 'Process'], coverImage: '' },
-            { _id: 'color-theory', title: 'Color Theory for Modern Designers', excerpt: 'Color is the silent communicator of design. Understanding psychology behind hues, saturation, and contrast transforms average design into great.', content: 'Color is the silent communicator.', date: new Date().toISOString(), author: 'Pratik', tags: ['Design', 'Color'], coverImage: '' },
-            { _id: 'typography-guide', title: 'Typography: The Invisible Grid of Design', excerpt: 'Most people feel good typography without being able to name why. Typeface selection and spacing carry enormous weight in composition.', content: 'Most people feel good typography.', date: new Date().toISOString(), author: 'Pratik', tags: ['Typography', 'Design'], coverImage: '' },
-          ])
-          return
-        }
-        const response = await fetch(apiUrl('/api/blogs'))
-        if (!response.ok) throw new Error('Failed to fetch blogs')
-        const contentType = response.headers.get('content-type')
-        if (!contentType?.includes('application/json'))
-          throw new TypeError("Backend didn't return JSON.")
-        setBlogs(await response.json())
+        const { data } = await api.get('/api/blogs')
+        setBlogs(Array.isArray(data) ? data : [])
       } catch (err) {
-        setError(err.message || 'Unable to load blogs')
+        setError(getErrorMessage(err, 'Unable to load blogs'))
       } finally {
         setIsLoading(false)
       }

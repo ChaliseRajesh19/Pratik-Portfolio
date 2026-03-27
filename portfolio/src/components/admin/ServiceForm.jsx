@@ -1,6 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import { apiUrl } from '../../lib/api'
+import api, { getErrorMessage } from '../../lib/api'
 
 function ServiceForm({ onCreated, initialService, onCancel }) {
     const [title, setTitle] = React.useState('')
@@ -34,23 +34,9 @@ function ServiceForm({ onCreated, initialService, onCancel }) {
 
         try {
             setLoading(true)
-            const token = localStorage.getItem('adminToken')
-            
-            const method = initialService ? 'PUT' : 'POST'
-            const url = initialService
-                ? apiUrl(`/api/services/${initialService._id}`)
-                : apiUrl('/api/services')
-
-            const response = await fetch(url, {
-                method: method,
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-                body: formData
-            })
-
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.message || (initialService ? 'Failed to update service' : 'Failed to create service'))
-            }
+            await (initialService
+                ? api.put(`/api/services/${initialService._id}`, formData)
+                : api.post('/api/services', formData))
 
             toast.success(initialService ? 'Service updated successfully.' : 'Service created successfully.')
             if (!initialService) {
@@ -60,16 +46,19 @@ function ServiceForm({ onCreated, initialService, onCancel }) {
             }
             if (onCreated) onCreated()
         } catch (err) {
-            toast.error(err.message)
+            toast.error(getErrorMessage(err, initialService ? 'Failed to update service' : 'Failed to create service'))
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="rounded-3xl p-2">
-            <h2 className="text-xl font-semibold hidden">New Service</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="h-full w-full overflow-y-auto px-6 py-6 md:px-8">
+            <div className="mb-6 max-w-5xl">
+                <h2 className="text-2xl font-semibold">{initialService ? 'Edit service' : 'New service'}</h2>
+                <p className="mt-2 text-sm text-slate-400">Manage the service title, copy, and icon with more room to work.</p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5 max-w-5xl">
                 <label className="block text-sm font-medium text-slate-300">
                     Title
                     <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring" />

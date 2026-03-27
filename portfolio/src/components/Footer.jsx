@@ -92,12 +92,12 @@ const Footer = () => {
             Get in touch
           </h4>
           <div className="flex flex-col gap-3">
-            <a href="mailto:pratikbhusal02@gmail.com" className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group">
-              pratikbhusal02@gmail.com
+            <a href="mailto:mail@creativepratik.com" className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group">
+              mail@creativepratik.com
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-blue-600 transition-all duration-300 group-hover:w-full" />
             </a>
             <span className="w-fit text-sm text-slate-400">
-              Chandrauta, Nepal
+              Kapilvastu, Nepal
             </span>
             <a 
               href="https://wa.me/9779800722127" 

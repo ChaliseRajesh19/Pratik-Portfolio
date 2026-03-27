@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import ServiceForm from './ServiceForm'
-import { apiUrl, assetUrl } from '../../lib/api'
+import api, { assetUrl, getErrorMessage } from '../../lib/api'
 
 function ServiceList({ refreshKey }) {
     const [services, setServices] = React.useState([])
@@ -17,12 +17,10 @@ function ServiceList({ refreshKey }) {
     const loadServices = async () => {
             setLoading(true)
             try {
-                const response = await fetch(apiUrl('/api/services'))
-                const data = await response.json()
-                if (!response.ok) throw new Error(data.message || 'Failed to load services')
+                const { data } = await api.get('/api/services')
                 setServices(data)
             } catch (err) {
-                toast.error(err.message)
+                toast.error(getErrorMessage(err, 'Failed to load services'))
             } finally {
                 setLoading(false)
             }
@@ -36,17 +34,12 @@ function ServiceList({ refreshKey }) {
         if (!deleteItem) return
         setIsDeleting(true)
         try {
-            const token = localStorage.getItem('adminToken')
-            const response = await fetch(apiUrl(`/api/services/${deleteItem._id}`), {
-                method: 'DELETE',
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined
-            })
-            if (!response.ok) throw new Error('Failed to delete service')
+            await api.delete(`/api/services/${deleteItem._id}`)
             setServices(prev => prev.filter(s => s._id !== deleteItem._id))
             toast.success('Service deleted successfully')
             setDeleteItem(null)
         } catch (err) {
-            toast.error(err.message)
+            toast.error(getErrorMessage(err, 'Failed to delete service'))
         } finally {
             setIsDeleting(false)
         }
@@ -143,6 +136,7 @@ function ServiceList({ refreshKey }) {
                     setEditItem(null)
                 }}
                 title={editItem ? 'Edit Service' : 'Add New Service'}
+                contentClassName="h-full"
             >
                 <ServiceForm 
                     initialService={editItem}

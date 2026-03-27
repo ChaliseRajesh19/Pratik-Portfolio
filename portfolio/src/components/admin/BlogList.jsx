@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import BlogForm from './BlogForm'
-import { apiUrl } from '../../lib/api'
+import api, { assetUrl, getErrorMessage } from '../../lib/api'
 
 function BlogList({ refreshKey, onEdit }) {
 	const [blogs, setBlogs] = React.useState([])
@@ -17,18 +17,10 @@ function BlogList({ refreshKey, onEdit }) {
 	const loadBlogs = async () => {
 			setLoading(true)
 			try {
-				const response = await fetch(apiUrl('/api/blogs'), {
-					signal: controller.signal
-				})
-				const data = await response.json()
-				if (!response.ok) {
-					throw new Error(data.message || 'Failed to load blogs')
-				}
+				const { data } = await api.get('/api/blogs')
 				setBlogs(data)
 			} catch (err) {
-				if (err.name !== 'AbortError') {
-					toast.error(err.message)
-				}
+				toast.error(getErrorMessage(err, 'Failed to load blogs'))
 			} finally {
 				setLoading(false)
 			}
@@ -42,17 +34,12 @@ function BlogList({ refreshKey, onEdit }) {
 		if (!deleteItem) return
 		setIsDeleting(true)
 		try {
-			const token = localStorage.getItem('adminToken')
-			const response = await fetch(apiUrl(`/api/blogs/${deleteItem._id}`), {
-				method: 'DELETE',
-				headers: token ? { Authorization: `Bearer ${token}` } : undefined
-			})
-			if (!response.ok) throw new Error('Failed to delete blog')
+			await api.delete(`/api/blogs/${deleteItem._id}`)
 			setBlogs((prev) => prev.filter((item) => item._id !== deleteItem._id))
 			toast.success('Blog deleted successfully')
 			setDeleteItem(null)
 		} catch (err) {
-			toast.error(err.message)
+			toast.error(getErrorMessage(err, 'Failed to delete blog'))
 		} finally {
 			setIsDeleting(false)
 		}
@@ -134,6 +121,13 @@ function BlogList({ refreshKey, onEdit }) {
 								key={blog._id}
 								className="rounded-2xl border border-slate-800/70 bg-slate-950/50 p-5"
 							>
+								{blog.coverImage ? (
+									<img
+										src={assetUrl(blog.coverImage)}
+										alt={blog.title}
+										className="mb-4 h-40 w-full rounded-xl object-cover"
+									/>
+								) : null}
 								<div className="flex flex-wrap items-center justify-between gap-3">
 									<div>
 										<h3 className="text-base font-semibold text-slate-100">{blog.title}</h3>
@@ -142,6 +136,13 @@ function BlogList({ refreshKey, onEdit }) {
 											{blog.date ? ` • ${formatDate(blog.date)}` : ''}
 										</p>
 									</div>
+									<span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
+										blog.status === 'published'
+											? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+											: 'border border-slate-700/70 bg-slate-800/70 text-slate-300'
+									}`}>
+										{blog.status || 'draft'}
+									</span>
 								</div>
 								
 								<div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-800/50">
@@ -161,8 +162,8 @@ function BlogList({ refreshKey, onEdit }) {
 									</button>
 								</div>
 								<p className="mt-3 text-sm text-slate-400">
-									{stripHtml(blog.content || '').slice(0, 160)}
-									{stripHtml(blog.content || '').length > 160 ? '...' : ''}
+									{(blog.excerpt || stripHtml(blog.content || '')).slice(0, 160)}
+									{(blog.excerpt || stripHtml(blog.content || '')).length > 160 ? '...' : ''}
 								</p>
 								{Array.isArray(blog.tags) && blog.tags.length > 0 ? (
 									<div className="mt-3 flex flex-wrap gap-2">
@@ -197,6 +198,8 @@ function BlogList({ refreshKey, onEdit }) {
 					setEditItem(null)
 				}}
 				title={editItem ? 'Edit Blog' : 'Create Blog'}
+				hideHeader
+				contentClassName="h-full"
 			>
 				<BlogForm 
 					initialBlog={editItem}

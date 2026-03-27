@@ -1,7 +1,7 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
 import BlogEditor from './BlogEditor'
-import { apiUrl } from '../../lib/api'
+import api, { getErrorMessage } from '../../lib/api'
 
 function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel }) {
 	const [title, setTitle] = React.useState('')
@@ -64,47 +64,29 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 
 		try {
 			setLoading(true)
-			const token = localStorage.getItem('adminToken')
-
 			let coverImageUrl = initialBlog?.coverImage || ''
 			if (coverImage) {
 				const formData = new FormData()
 				formData.append('image', coverImage)
-				const uploadRes = await fetch(apiUrl('/api/upload'), {
-					method: 'POST',
-					headers: token ? { Authorization: `Bearer ${token}` } : {},
-					body: formData,
-				})
-				if (uploadRes.ok) {
-					const uploadData = await uploadRes.json()
-					coverImageUrl = uploadData.url || coverImageUrl
-				}
+				const { data: uploadData } = await api.post('/api/upload', formData)
+				coverImageUrl = uploadData.url || coverImageUrl
 			}
 
-			const response = await fetch(
-				isEditing
-					? apiUrl(`/api/blogs/${initialBlog._id}`)
-					: apiUrl('/api/blogs/create'),
-				{
-					method: isEditing ? 'PUT' : 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...(token ? { Authorization: `Bearer ${token}` } : {}),
-					},
-					body: JSON.stringify({
-						title: title.trim(),
-						author: author.trim(),
-						content: content.trim(),
-						tags,
-						excerpt: excerpt.trim(),
-						coverImage: coverImageUrl,
-						status,
-					}),
-				}
-			)
+			const payload = {
+				title: title.trim(),
+				author: author.trim(),
+				content: content.trim(),
+				tags,
+				excerpt: excerpt.trim(),
+				coverImage: coverImageUrl,
+				status,
+			}
 
-			const data = await response.json()
-			if (!response.ok) throw new Error(data.message || 'Failed to save blog')
+			await (
+				isEditing
+					? api.put(`/api/blogs/${initialBlog._id}`, payload)
+					: api.post('/api/blogs/create', payload)
+			)
 
 			if (isEditing) {
 				toast.success('Blog post updated!')
@@ -116,14 +98,14 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 				if (onCreated) onCreated()
 			}
 		} catch (err) {
-			toast.error(err.message)
+			toast.error(getErrorMessage(err, 'Failed to save blog'))
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	return (
-		<div className="min-h-screen bg-[#0b0d1a] text-slate-100">
+		<div className="h-full bg-[#0b0d1a] text-slate-100">
 			{/* ── Top bar ── */}
 			<div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/80 bg-[#0e1020]">
 				<div className="flex items-center gap-3">
@@ -163,10 +145,10 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 			</div>
 
 			{/* ── Two-column layout ── */}
-			<form id="blog-form" onSubmit={handleSubmit} className="flex gap-0 h-[calc(100vh-57px)]">
+			<form id="blog-form" onSubmit={handleSubmit} className="flex h-[calc(94vh-57px)] min-h-0 gap-0">
 
 				{/* LEFT — Editor */}
-				<div className="flex-1 overflow-y-auto px-8 py-6">
+				<div className="flex-1 overflow-y-auto px-8 py-6 min-w-0">
 					{/* Title */}
 					<input
 						type="text"
@@ -184,7 +166,7 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 				</div>
 
 				{/* RIGHT — Settings sidebar */}
-				<div className="w-72 shrink-0 border-l border-slate-800/70 overflow-y-auto bg-[#0e1020]">
+				<div className="w-[360px] shrink-0 border-l border-slate-800/70 overflow-y-auto bg-[#0e1020]">
 					{/* Settings header */}
 					<div className="flex items-center gap-2 px-5 py-3 border-b border-slate-800/70">
 						<svg width="14" height="14" viewBox="0 0 16 16" fill="none">

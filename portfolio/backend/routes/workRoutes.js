@@ -1,10 +1,11 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
 import Work from '../models/Works.js';
 import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-router.post('/upload', upload.fields([
+router.post('/upload', authMiddleware, upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
@@ -62,7 +63,7 @@ router.get('/:category', async (req, res) => {
   }
 });
 
-router.put('/:id', upload.fields([
+router.put('/:id', authMiddleware, upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
@@ -116,7 +117,7 @@ router.put('/:id', upload.fields([
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const deletedWork = await Work.findByIdAndDelete(req.params.id);
     if (!deletedWork) {

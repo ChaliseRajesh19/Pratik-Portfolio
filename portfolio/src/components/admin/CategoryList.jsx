@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import CategoryForm from './CategoryForm'
-import { apiUrl } from '../../lib/api'
+import api, { getErrorMessage } from '../../lib/api'
 
 function CategoryList({ refreshKey }) {
     const [categories, setCategories] = React.useState([])
@@ -17,12 +17,10 @@ function CategoryList({ refreshKey }) {
     const loadCategories = async () => {
             setLoading(true)
             try {
-                const response = await fetch(apiUrl('/api/categories'))
-                const data = await response.json()
-                if (!response.ok) throw new Error(data.message || 'Failed to load categories')
+                const { data } = await api.get('/api/categories')
                 setCategories(data)
             } catch (err) {
-                toast.error(err.message)
+                toast.error(getErrorMessage(err, 'Failed to load categories'))
             } finally {
                 setLoading(false)
             }
@@ -36,17 +34,12 @@ function CategoryList({ refreshKey }) {
         if (!deleteItem) return
         setIsDeleting(true)
         try {
-            const token = localStorage.getItem('adminToken')
-            const response = await fetch(apiUrl(`/api/categories/${deleteItem._id}`), {
-                method: 'DELETE',
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined
-            })
-            if (!response.ok) throw new Error('Failed to delete category')
+            await api.delete(`/api/categories/${deleteItem._id}`)
             setCategories(prev => prev.filter(c => c._id !== deleteItem._id))
             toast.success('Category deleted successfully')
             setDeleteItem(null)
         } catch (err) {
-            toast.error(err.message)
+            toast.error(getErrorMessage(err, 'Failed to delete category'))
         } finally {
             setIsDeleting(false)
         }
@@ -147,6 +140,7 @@ function CategoryList({ refreshKey }) {
                     setEditItem(null)
                 }}
                 title={editItem ? 'Edit Category' : 'Add New Category'}
+                contentClassName="h-full"
             >
                 <CategoryForm 
                     initialCategory={editItem}

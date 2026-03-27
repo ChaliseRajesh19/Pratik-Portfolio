@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom';
-import { apiUrl } from '../lib/api';
+import api, { getErrorMessage } from '../lib/api';
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -21,21 +21,11 @@ function AdminLogin() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(apiUrl('/api/auth/login'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-      const data = await response.json();
+      const { data } = await api.post('/api/auth/login', { email, password });
       localStorage.setItem('adminToken', data.token);
       navigate('/admin/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }

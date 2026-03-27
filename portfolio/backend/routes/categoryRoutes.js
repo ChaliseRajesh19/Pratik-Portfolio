@@ -1,9 +1,10 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
 import Category from '../models/Category.js';
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
     try {
         const { name, slug, description } = req.body;
         const newCategory = new Category({ name, slug, description });
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const { name, slug, description, icon } = req.body;
         const updatedCategory = await Category.findByIdAndUpdate(req.params.id, { name, slug, description, icon }, { new: true });
@@ -34,7 +35,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         await Category.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: "Category deleted" });

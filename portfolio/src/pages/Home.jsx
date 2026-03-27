@@ -40,7 +40,7 @@ function Home() {
   }, [location.state]);
 
   const handlehireClick = () => {
-    window.location.href = "mailto:pratikbhusal02@gmail.com";
+    window.location.href = "mailto:mail@creativepratik.com";
   };
 
   const handleportfolio = () => {

@@ -222,7 +222,7 @@ function Header() {
               </NavLink>
             )}
             <motion.a
-              href="mailto:pratikbhusal02@gmail.com"
+              href="mailto:mail@creativepratik.com"
               whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(37,99,235,0.6)" }}
               whileTap={{ scale: 0.97 }}
               className="ml-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative overflow-hidden group border border-blue-500/30"
@@ -409,7 +409,7 @@ function Header() {
                 )}
 
                 <motion.a
-                  href="mailto:pratikbhusal02@gmail.com"
+                  href="mailto:mail@creativepratik.com"
                   whileTap={{ scale: 0.97 }}
                   className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.18em] text-white relative overflow-hidden group"
                   style={{

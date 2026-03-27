@@ -1,6 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import { apiUrl } from '../../lib/api'
+import api, { getErrorMessage } from '../../lib/api'
 
 const ICON_CHOICES = [
   '🎨','✏️','🖌️','📐','📏','🖊️','🗂️','🖼️','💡','⭐',
@@ -33,29 +33,16 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
 
         try {
             setLoading(true)
-            const token = localStorage.getItem('adminToken')
+            const payload = {
+                name: name.trim(),
+                slug: slug.trim().toLowerCase(),
+                description: description.trim(),
+                icon,
+            }
 
-            const method = initialCategory ? 'PUT' : 'POST'
-            const url = initialCategory
-                ? apiUrl(`/api/categories/${initialCategory._id}`)
-                : apiUrl('/api/categories')
-
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    name: name.trim(),
-                    slug: slug.trim().toLowerCase(),
-                    description: description.trim(),
-                    icon,
-                })
-            })
-
-            const data = await response.json()
-            if (!response.ok) throw new Error(data.message || (initialCategory ? 'Failed to update category' : 'Failed to create category'))
+            await (initialCategory
+                ? api.put(`/api/categories/${initialCategory._id}`, payload)
+                : api.post('/api/categories', payload))
 
             toast.success(initialCategory ? 'Category updated successfully.' : 'Category created successfully.')
             if (!initialCategory) {
@@ -66,16 +53,19 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
             }
             if (onCreated) onCreated()
         } catch (err) {
-            toast.error(err.message)
+            toast.error(getErrorMessage(err, initialCategory ? 'Failed to update category' : 'Failed to create category'))
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="rounded-3xl p-2">
-            <h2 className="text-xl font-semibold hidden">New Category</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="h-full w-full overflow-y-auto px-6 py-6 md:px-8">
+            <div className="mb-6 max-w-5xl">
+                <h2 className="text-2xl font-semibold">{initialCategory ? 'Edit category' : 'New category'}</h2>
+                <p className="mt-2 text-sm text-slate-400">Set up the category name, slug, icon, and header description in a full-width workspace.</p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5 max-w-5xl">
                 {/* Icon picker */}
                 <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Category Icon</label>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiUrl, assetUrl } from "../lib/api";
+import api, { assetUrl } from "../lib/api";
 
 // ─── Work details modal ──────────────────────────────────────────────────────────
 function WorkDetailsModal({ work, onClose }) {
@@ -356,9 +356,8 @@ function WorkPages() {
   const [activeTag, setActiveTag] = useState("All");
 
   useEffect(() => {
-    fetch(apiUrl('/api/categories'))
-      .then((r) => r.json())
-      .then((data) => {
+    api.get('/api/categories')
+      .then(({ data }) => {
         if (Array.isArray(data))
           setCategoryInfo(data.find((c) => c.slug === category) || null);
       })
@@ -367,9 +366,8 @@ function WorkPages() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(apiUrl(`/api/works/${category}`))
-      .then((r) => r.json())
-      .then((data) => setWorks(Array.isArray(data) ? data : []))
+    api.get(`/api/works/${category}`)
+      .then(({ data }) => setWorks(Array.isArray(data) ? data : []))
       .catch(() => setWorks([]))
       .finally(() => setLoading(false));
   }, [category]);

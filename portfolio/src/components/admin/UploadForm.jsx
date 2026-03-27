@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-hot-toast";
-import { apiUrl, assetUrl } from "../../lib/api";
+import api, { assetUrl, getErrorMessage } from "../../lib/api";
 
 function UploadForm({
   categories,
@@ -75,25 +75,9 @@ function UploadForm({
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
-
-      const method = initialWork ? "PUT" : "POST";
-      const url = initialWork
-        ? apiUrl(`/api/works/${initialWork._id}`)
-        : apiUrl('/api/works/upload');
-
-      const response = await fetch(url, {
-        method: method,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          data.message || (initialWork ? "Update failed" : "Upload failed"),
-        );
-      }
+      await (initialWork
+        ? api.put(`/api/works/${initialWork._id}`, formData)
+        : api.post('/api/works/upload', formData));
 
       toast.success(
         initialWork
@@ -112,20 +96,22 @@ function UploadForm({
         onUploaded(category);
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(
+        getErrorMessage(err, initialWork ? "Update failed" : "Upload failed"),
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-xl shadow-slate-950/30 max-h-[85vh] overflow-y-auto custom-scrollbar">
-      <h2 className="text-xl font-semibold">New work</h2>
+    <div className="h-full w-full overflow-y-auto custom-scrollbar px-6 py-6 md:px-8">
+      <h2 className="text-2xl font-semibold">{initialWork ? 'Edit work' : 'New work'}</h2>
       <p className="mt-2 text-sm text-slate-400">
         Upload images and fill project details below.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5 max-w-6xl">
         <label className="block text-sm font-medium text-slate-300">
           Work Title
           <input

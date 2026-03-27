@@ -1,32 +1,75 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import ServiceCard from '../components/ServiceCard'
-import { SectionHeader } from '../components/SectionHeader'
-import { GridConnections } from '../components/GridConnections'
-import { apiUrl, assetUrl } from '../lib/api'
+import React, { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import ServiceCard from "../components/ServiceCard";
+import { SectionHeader } from "../components/SectionHeader";
+import { GridConnections } from "../components/GridConnections";
+import { SectionMotionShell } from "../components/motion/SectionMotionShell";
+import api, { assetUrl, getErrorMessage } from "../lib/api";
+
+const marqueeItems = [
+  "brand identity",
+  "motion systems",
+  "video editing",
+  "campaign design",
+  "social visuals",
+  "creative direction",
+];
 
 function Service({ withTopOffset = true }) {
-  const [services, setServices] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const stageRef = useRef(null);
+
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ["start end", "end start"],
+  });
+
+  const stageY = useTransform(scrollYProgress, [0, 1], [90, -70]);
+  const stageRotate = useTransform(scrollYProgress, [0, 0.5, 1], [-3, 0, 3]);
+  const stageScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.96, 1.02, 0.98]);
+  const beamOpacity = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [0.2, 0.8, 0.5, 0.2]);
 
   useEffect(() => {
-    fetch(apiUrl('/api/services'))
-      .then(res => res.json())
-      .then(data => {
-        setServices(Array.isArray(data) ? data : [])
-        setLoading(false)
+    api
+      .get("/api/services")
+      .then(({ data }) => {
+        setServices(Array.isArray(data) ? data : []);
+        setLoading(false);
       })
-      .catch(err => {
-        console.error("Failed to fetch services:", err)
-        setLoading(false)
-      })
-  }, [])
+      .catch((err) => {
+        console.error("Failed to fetch services:", getErrorMessage(err));
+        setLoading(false);
+      });
+  }, []);
 
   return (
-    <section className={`relative w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 py-12 md:py-20 overflow-hidden ${withTopOffset ? 'mt-16' : 'mt-0'}`}>
-      
-      {/* Background radial glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-900/10 blur-[120px] rounded-full pointer-events-none" />
+    <SectionMotionShell
+      variant="cyan"
+      ghostLabel="services"
+      className={`relative w-full py-12 md:py-20 ${
+        withTopOffset ? "mt-16" : "mt-0"
+      }`}
+    >
+      <div className="absolute inset-x-0 top-16 overflow-hidden opacity-70">
+        <div className="motion-marquee gap-6 whitespace-nowrap text-[11px] font-black uppercase tracking-[0.45em] text-cyan-200/20">
+          {[...marqueeItems, ...marqueeItems].map((item, index) => (
+            <span key={`${item}-${index}`} className="px-6">
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <motion.div
+        aria-hidden="true"
+        className="absolute left-1/2 top-[28%] h-32 w-[68%] -translate-x-1/2 rounded-full blur-3xl"
+        style={{
+          opacity: beamOpacity,
+          background:
+            "linear-gradient(90deg, transparent, rgba(34,211,238,0.18), rgba(59,130,246,0.18), transparent)",
+        }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeader
@@ -35,9 +78,20 @@ function Service({ withTopOffset = true }) {
           subtitle="Delivering high-quality visual solutions tailored to elevate your brand and engage your audience."
         />
 
-        <div className="relative">
-          {/* Animated SVG background connections */}
+        <motion.div
+          ref={stageRef}
+          className="relative"
+          style={{
+            y: stageY,
+            rotateX: stageRotate,
+            scale: stageScale,
+            transformPerspective: 1400,
+          }}
+        >
+          <div className="absolute inset-x-[8%] top-0 h-full rounded-[2.5rem] border border-cyan-400/10 bg-gradient-to-b from-cyan-500/5 via-transparent to-blue-500/5 shadow-[0_24px_80px_rgba(8,145,178,0.08)]" />
+
           <GridConnections />
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10 relative z-10">
             {loading ? (
@@ -46,25 +100,28 @@ function Service({ withTopOffset = true }) {
               </div>
             ) : services.length > 0 ? (
               services.map((service, index) => {
-                const iconSrc = assetUrl(service.imageURL)
+                const iconSrc = assetUrl(service.imageURL);
+
                 return (
-                  <ServiceCard 
-                    key={service._id} 
-                    index={index} 
-                    title={service.title} 
-                    description={service.description} 
-                    icon={iconSrc} 
+                  <ServiceCard
+                    key={service._id}
+                    index={index}
+                    title={service.title}
+                    description={service.description}
+                    icon={iconSrc}
                   />
-                )
+                );
               })
             ) : (
-              <p className="col-span-full text-center text-slate-400">No services currently available.</p>
+              <p className="col-span-full text-center text-slate-400">
+                No services currently available.
+              </p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
-    </section>
-  )
+    </SectionMotionShell>
+  );
 }
 
-export default Service
+export default Service;

@@ -4,7 +4,7 @@ import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import UploadForm from './UploadForm'
 import { toast } from 'react-hot-toast'
-import { apiUrl } from '../../lib/api'
+import api, { getErrorMessage, isRequestCanceled } from '../../lib/api'
 
 function UploadList({ category, categories, onCategoryChange, refreshKey, onAddWork }) {
   const [works, setWorks] = React.useState([])
@@ -31,17 +31,13 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
     const loadWorks = async () => {
       setLoading(true)
       try {
-        const url = fetchCategory 
-          ? apiUrl(`/api/works/${fetchCategory}`)
-          : apiUrl('/api/works')
-          
-        const response = await fetch(url, { signal: controller.signal })
-        const data = await response.json()
-        if (!response.ok) throw new Error(data.message || 'Failed to load works')
-        
+        const { data } = await api.get(
+          fetchCategory ? `/api/works/${fetchCategory}` : '/api/works',
+          { signal: controller.signal }
+        )
         setWorks(Array.isArray(data) ? data : [])
       } catch (err) {
-        if (err.name !== 'AbortError') toast.error(err.message)
+        if (!isRequestCanceled(err)) toast.error(getErrorMessage(err, 'Failed to load works'))
       } finally {
         setLoading(false)
       }
@@ -56,19 +52,12 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
     
     setIsDeleting(true)
     try {
-      const token = localStorage.getItem('adminToken')
-      const response = await fetch(apiUrl(`/api/works/${deleteWorkItem._id}`), {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message || 'Failed to delete work')
-      
+      await api.delete(`/api/works/${deleteWorkItem._id}`)
       setWorks(prev => prev.filter(item => item._id !== deleteWorkItem._id))
       toast.success('Work deleted successfully')
       setDeleteWorkItem(null)
     } catch (err) {
-      toast.error(err.message || 'Error deleting work')
+      toast.error(getErrorMessage(err, 'Error deleting work'))
     } finally {
       setIsDeleting(false)
     }
@@ -172,6 +161,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
           setEditWorkItem(null)
         }}
         title={editWorkItem ? 'Edit Work' : 'Add New Work'}
+        contentClassName="h-full"
       >
         <UploadForm 
           categories={categories}

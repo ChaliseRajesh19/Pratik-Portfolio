@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 import workRoutes from './routes/workRoutes.js';
 import { connectToDatabase } from './lib/db.js';
 
@@ -34,6 +35,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api', uploadRoutes);
 app.use('/api/works', workRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/services', serviceRoutes);

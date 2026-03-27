@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
-import { API_BASE_URL, apiUrl, assetUrl } from "../lib/api";
+import api, { assetUrl, getErrorMessage, isRequestCanceled } from "../lib/api";
 
 /* ── Reading progress bar ── */
 function ReadingProgress() {
@@ -124,56 +124,14 @@ export default function BlogPost() {
       setLoading(true);
       setError("");
       try {
-        if (!API_BASE_URL) {
-          const mockBlogs = {
-            "brand-identity-tips": {
-              title: "Brand Identity: Why Consistency is Everything",
-              content: `<p>Your brand is more than just a logo. It is the feeling people get when they interact with your business. Consistent visual language across all touchpoints builds trust and recognition. Here is how to craft a brand identity that truly sticks.</p>
-              <h2>Why Consistency Matters</h2>
-              <p>Every time a customer sees your brand — whether on social media, a business card, or your website — they are forming an impression. Inconsistency creates cognitive dissonance. It signals disorganization, and at a subconscious level, it erodes trust.</p>
-              <h2>The Pillars of Brand Identity</h2>
-              <p>A strong brand identity is built on a few core pillars: a distinctive mark, a cohesive color palette, a typographic system, and a clear voice. When all four work in harmony, the brand becomes recognizable across any medium or context.</p>`,
-              date: new Date().toISOString(),
-              author: "Pratik",
-              tags: ["Branding", "Design"],
-              coverImage: "",
-            },
-            "logo-design-process": {
-              title: "My 5-Step Logo Design Process",
-              content: `<p>Great logos are not created by accident. Behind every iconic mark is a structured process of research, ideation, and refinement. In this post I walk through exactly how I approach every logo project from brief to final delivery.</p>
-              <h2>Step 1: Discovery</h2>
-              <p>Before touching a pen or mouse, I spend time understanding the business, its audience, and its competitors. The brief is not the goal — understanding the problem behind the brief is.</p>`,
-              date: new Date().toISOString(),
-              author: "Pratik",
-              tags: ["Logo", "Process"],
-              coverImage: "",
-            },
-          };
-          const found = mockBlogs[id];
-          setBlog(
-            found || {
-              title: "Blog Post",
-              content: "<p>Content coming soon.</p>",
-              date: new Date().toISOString(),
-              author: "Pratik",
-              tags: [],
-              coverImage: "",
-            },
-          );
-          return;
-        }
-        const res = await fetch(apiUrl(`/api/blogs/${id}`), {
+        const { data } = await api.get(`/api/blogs/${id}`, {
           signal: controller.signal,
         });
-        const ct = res.headers.get("content-type");
-        if (!ct?.includes("application/json"))
-          throw new TypeError("Backend didn't return JSON.");
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to load blog");
         setBlog(data);
       } catch (err) {
-        if (err.name !== "AbortError")
-          setError(err.message || "Unable to load blog");
+        if (!isRequestCanceled(err)) {
+          setError(getErrorMessage(err, "Unable to load blog"));
+        }
       } finally {
         setLoading(false);
       }
