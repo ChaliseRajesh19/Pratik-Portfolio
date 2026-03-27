@@ -1,6 +1,8 @@
 import axios from "axios";
 
-export const API_BASE_URL = "https://portfolio-backend-r2k1.vercel.app";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://portfolio-backend-r2k1.vercel.app";
 
 function trimTrailingSlash(value) {
   return value ? value.replace(/\/+$/, "") : "";

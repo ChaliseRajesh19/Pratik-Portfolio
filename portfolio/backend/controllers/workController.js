@@ -2,9 +2,9 @@ import Work from '../models/Works.js';
 
 export const createWork = async (req, res) => {
     try {
-        const { title, category } = req.body;
+        const { headline, category } = req.body;
         const newWork = new Work({
-            title,
+            headline: headline?.trim() || '',
             category,
             imageURL: '/uploads/' + req.file.filename
         });

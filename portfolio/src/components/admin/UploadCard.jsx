@@ -16,6 +16,7 @@ const EditIcon = () => (
 function UploadCard({ work, onEdit, onDelete }) {
   const [hovered, setHovered] = React.useState(false)
   const imageSrc = assetUrl(work.imageURL)
+  const headline = work.headline || 'Untitled Image Set'
 
   return (
     <div
@@ -27,18 +28,11 @@ function UploadCard({ work, onEdit, onDelete }) {
         boxShadow: hovered ? '0 8px 30px rgba(0,0,0,0.4)' : 'none'
       }}
     >
-      {/* Top badges (mocked as Published for design parity) */}
-      <div className="absolute top-3 right-3 z-10 flex gap-2">
-        <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold tracking-wider">
-          Published
-        </span>
-      </div>
-
       {/* Image half */}
       <div className="w-full aspect-square md:aspect-[4/3] bg-slate-900 overflow-hidden relative">
         <img
           src={imageSrc}
-          alt={work.title}
+          alt={headline}
           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
         {/* Subtle overlay */}
@@ -51,10 +45,10 @@ function UploadCard({ work, onEdit, onDelete }) {
           {work.category}
         </p>
         <h3 className="text-[17px] font-bold text-slate-100 mb-2 leading-tight line-clamp-2">
-          {work.title}
+          {headline}
         </h3>
-        <p className="text-[13px] text-slate-400 leading-relaxed line-clamp-2 mb-6 flex-1">
-          {work.description}
+        <p className="text-[12px] text-slate-500 mb-6 flex-1">
+          {(work.galleryImages?.length || 0) + 1} image{(work.galleryImages?.length || 0) + 1 > 1 ? 's' : ''}
         </p>
 
         {/* Action Buttons */}

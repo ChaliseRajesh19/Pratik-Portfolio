@@ -4,6 +4,10 @@ import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
+router.get('/upload', (_req, res) => {
+  res.status(405).json({ message: 'Use POST /api/upload to upload images.' });
+});
+
 router.post('/upload', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     if (!req.file?.path) {

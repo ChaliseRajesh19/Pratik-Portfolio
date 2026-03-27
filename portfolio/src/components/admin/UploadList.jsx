@@ -65,7 +65,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
 
   const filteredWorks = works.filter(w => 
     !search || 
-    w.title?.toLowerCase().includes(search.toLowerCase()) ||
+    w.headline?.toLowerCase().includes(search.toLowerCase()) ||
     w.category?.toLowerCase().includes(search.toLowerCase())
   )
 
@@ -74,7 +74,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
       {/* ── Dashboard-style Header ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-          Manage Portfolio Works
+          Manage Portfolio Images
         </h1>
         
         <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -100,7 +100,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
             </span>
             <input
               type="text"
-              placeholder="Search works..."
+              placeholder="Search images..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="rounded-xl border border-slate-700 bg-[#0d131f] pl-10 pr-4 py-2.5 text-slate-200 outline-none focus:border-purple-400 w-full sm:w-[220px]"
@@ -112,7 +112,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
             onClick={() => setIsUploadOpen(true)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-[#b255ff] hover:bg-[#a044ec] shadow-lg shadow-purple-500/20 transition-all active:scale-95 whitespace-nowrap"
           >
-            <span className="text-xl leading-none font-normal">+</span> Add Work
+            <span className="text-xl leading-none font-normal">+</span> Add Images
           </button>
         </div>
       </div>
@@ -128,7 +128,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
       ) : filteredWorks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-800 rounded-3xl bg-slate-900/30">
           <div className="text-6xl mb-4">🗂️</div>
-          <p className="text-slate-400">No works found.</p>
+          <p className="text-slate-400">No images found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -147,8 +147,8 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
       <DeleteConfirmModal
         isOpen={!!deleteWorkItem}
         isDeleting={isDeleting}
-        title="Delete Work"
-        itemName={deleteWorkItem?.title}
+        title="Delete Images"
+        itemName={deleteWorkItem?.headline || deleteWorkItem?.category}
         onClose={() => setDeleteWorkItem(null)}
         onConfirm={handleDeleteConfirm}
       />
@@ -160,7 +160,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
           setIsUploadOpen(false)
           setEditWorkItem(null)
         }}
-        title={editWorkItem ? 'Edit Work' : 'Add New Work'}
+        title={editWorkItem ? 'Edit Images' : 'Add New Images'}
         contentClassName="h-full"
       >
         <UploadForm 

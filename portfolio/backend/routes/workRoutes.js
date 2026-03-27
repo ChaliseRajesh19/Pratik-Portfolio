@@ -10,7 +10,7 @@ router.post('/upload', authMiddleware, upload.fields([
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
   try {
-    const { title, category, description, tags, link } = req.body;
+    const { headline, category } = req.body;
     
     // req.files is an object where keys are field names
     const mainImageFile = req.files && req.files['image'] ? req.files['image'][0] : null;
@@ -20,18 +20,12 @@ router.post('/upload', authMiddleware, upload.fields([
       return res.status(400).json({ message: 'Main image upload failed or is missing' });
     }
     
-    // Convert comma-separated string to array
-    const parsedTags = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-    
     // Extract paths for gallery images
     const galleryImagePaths = galleryFiles.map(file => file.path);
 
     const newWork = new Work({
-      title,
+      headline: headline?.trim() || '',
       category,
-      description: description || '',
-      tags: parsedTags,
-      link: link || '',
       imageURL: mainImageFile.path,
       galleryImages: galleryImagePaths
     });
@@ -68,19 +62,12 @@ router.put('/:id', authMiddleware, upload.fields([
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
   try {
-    const { title, category, description, tags, link, existingGalleryImages } = req.body;
+    const { headline, category, existingGalleryImages } = req.body;
     let updateData = {
-      title,
+      headline: headline?.trim() || '',
       category,
-      description: description || '',
-      link: link || ''
     };
-    
-    // Parse tags if provided
-    if (tags !== undefined) {
-      updateData.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
-    }
-    
+
     // Parse existing gallery images to retain (from frontend)
     let currentGallery = [];
     if (existingGalleryImages) {
