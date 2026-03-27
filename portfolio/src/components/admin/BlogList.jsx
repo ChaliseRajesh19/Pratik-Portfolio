@@ -62,7 +62,10 @@ function BlogList({ refreshKey, onEdit }) {
 		!search || 
 		b.title?.toLowerCase().includes(search.toLowerCase()) ||
 		b.content?.toLowerCase().includes(search.toLowerCase()) ||
-		b.author?.toLowerCase().includes(search.toLowerCase())
+		b.author?.toLowerCase().includes(search.toLowerCase()) ||
+		b.category?.toLowerCase().includes(search.toLowerCase()) ||
+		b.excerpt?.toLowerCase().includes(search.toLowerCase()) ||
+		b.slug?.toLowerCase().includes(search.toLowerCase())
 	)
 
 	return (
@@ -136,13 +139,32 @@ function BlogList({ refreshKey, onEdit }) {
 											{blog.date ? ` • ${formatDate(blog.date)}` : ''}
 										</p>
 									</div>
-									<span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
-										blog.status === 'published'
-											? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
-											: 'border border-slate-700/70 bg-slate-800/70 text-slate-300'
-									}`}>
-										{blog.status || 'draft'}
+									<div className="flex flex-wrap items-center gap-2 justify-end">
+										{blog.featured ? (
+											<span className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-amber-400/30 bg-amber-400/10 text-amber-300">
+												Featured
+											</span>
+										) : null}
+										<span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
+											blog.status === 'published'
+												? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+												: blog.status === 'archived'
+													? 'border border-rose-400/25 bg-rose-400/10 text-rose-300'
+													: 'border border-slate-700/70 bg-slate-800/70 text-slate-300'
+										}`}>
+											{blog.status || 'draft'}
+										</span>
+									</div>
+								</div>
+								<div className="mt-3 flex flex-wrap items-center gap-2">
+									<span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-300">
+										{blog.category || 'General'}
 									</span>
+									{blog.slug ? (
+										<span className="rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1 text-[11px] font-medium text-slate-400">
+											/{blog.slug}
+										</span>
+									) : null}
 								</div>
 								
 								<div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-800/50">

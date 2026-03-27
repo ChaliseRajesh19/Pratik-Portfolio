@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 /**
@@ -17,7 +17,7 @@ const GRADIENTS = [
  * Single portfolio card with CSS 3D perspective tilt on mouse hover.
  * Clicking anywhere on the card navigates to the category work page.
  */
-function TiltCard({ work, isMobile, index }) {
+function TiltCard({ work, isMobile, index, fullWidth = false }) {
   const cardRef = useRef(null)
   const [tilt, setTilt] = useState({ rotX: 0, rotY: 0, glareX: 50, glareY: 50 })
   const [hovered, setHovered] = useState(false)
@@ -49,20 +49,20 @@ function TiltCard({ work, isMobile, index }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, rotateX: -60, rotateY: 30, y: 200, z: -300, scale: 0.7 }}
+      initial={{ opacity: 0, rotateX: -28, rotateY: 12, y: 72, z: -120, scale: 0.88 }}
       whileInView={{ opacity: 1, rotateX: 0, rotateY: 0, y: 0, z: 0, scale: 1 }}
-      viewport={{ once: false, amount: 0.1 }}
+      viewport={{ once: false, amount: 0.02 }}
       transition={{ 
         type: 'spring', 
-        stiffness: 100, 
-        damping: 14, 
-        mass: 1.2,
-        delay: index * 0.15 
+        stiffness: 150, 
+        damping: 18, 
+        mass: 0.9,
+        delay: Math.min(index, 4) * 0.045 
       }}
       style={{
         perspective: '1500px',
         flexShrink: 0,
-        width: isMobile ? '100%' : '300px',
+        width: fullWidth ? '100%' : isMobile ? '100%' : '300px',
       }}
       className="group"
     >
@@ -166,11 +166,17 @@ function TiltCard({ work, isMobile, index }) {
  * Desktop: horizontal scrollable row of 3D-tilt cards with fade-edge masks.
  * Mobile:  regular vertical stack (no heavy 3D).
  *
- * @param {{ works: Array, limit: number|null, showViewAll: boolean }} props
+ * @param {{ works: Array, limit: number|null, showViewAll: boolean, layout: string }} props
  */
-export function ProjectCards3D({ works, limit = null, showViewAll = false }) {
+export function ProjectCards3D({
+  works,
+  limit = null,
+  showViewAll = false,
+  layout = 'rail',
+}) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const scrollContainerRef = useRef(null)
+  const navigate = useNavigate()
 
   // On mobile show 1 fewer card (5 vs 6)
   const mobileLimit = limit !== null ? Math.max(1, limit - 1) : null
@@ -196,17 +202,36 @@ export function ProjectCards3D({ works, limit = null, showViewAll = false }) {
 
   const ViewAllBtn = () => (
     <div className="flex justify-center mt-10">
-      <Link
-        to="/portfolio"
+      <button
+        type="button"
+        onClick={() => navigate('/portfolio')}
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[11px] uppercase tracking-[0.2em] text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-all duration-300"
       >
         View All Works
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
         </svg>
-      </Link>
+      </button>
     </div>
   )
+
+  if (layout === 'grid') {
+    return (
+      <div className="px-4 md:px-6 xl:px-10">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {displayedWorks.map((work, i) => (
+            <TiltCard
+              key={work.id}
+              work={work}
+              isMobile={isMobile}
+              index={i}
+              fullWidth
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   if (isMobile) {
     return (

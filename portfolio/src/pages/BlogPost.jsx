@@ -162,7 +162,7 @@ export default function BlogPost() {
   const stripHtml = (v = "") => v.replace(/<[^>]+>/g, " ");
   const wordCount = blog ? stripHtml(blog.content).split(/\s+/).filter(Boolean).length : 0;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
-  const primaryTag = blog?.tags?.[0] || null;
+  const primaryTag = blog?.category || blog?.tags?.[0] || null;
 
   return (
     <>

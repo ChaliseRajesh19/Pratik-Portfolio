@@ -16,6 +16,16 @@ const BlogSchema = new Schema(
       required: true,
       trim: true,
     },
+    slug: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    category: {
+      type: String,
+      default: 'General',
+      trim: true,
+    },
     excerpt: {
       type: String,
       default: '',
@@ -26,13 +36,32 @@ const BlogSchema = new Schema(
       default: '',
       trim: true,
     },
+    coverImageAlt: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     tags: {
       type: [String],
       default: [],
     },
+    featured: {
+      type: Boolean,
+      default: false,
+    },
+    seoTitle: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    seoDescription: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     status: {
       type: String,
-      enum: ['draft', 'published'],
+      enum: ['draft', 'published', 'archived'],
       default: 'draft',
     },
     publishedAt: {

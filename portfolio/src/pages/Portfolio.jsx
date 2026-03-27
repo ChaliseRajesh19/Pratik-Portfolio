@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import ProjectCards3D from "../components/three/ProjectCards3D";
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
@@ -13,7 +14,9 @@ const marqueeItems = [
 ];
 
 function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) {
+  const location = useLocation();
   const containerClass = withTopOffset ? "min-h-screen mt-16" : "mt-0";
+  const isStandalonePage = location.pathname === "/portfolio" && limit === null;
 
   const [works, setWorks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -87,10 +90,12 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
         <SectionHeader
           label="My Work"
           title="My Portfolio"
-          subtitle="Pixel-perfect visuals crafted with purpose and staged with extra motion depth."
+          subtitle={
+            isStandalonePage
+              ? "Explore every category in a full-page portfolio grid."
+              : "Pixel-perfect visuals crafted with purpose and staged with extra motion depth."
+          }
         />
-
-        
       </div>
 
       <div ref={sectionRef} className="relative z-10">
@@ -112,8 +117,19 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
             }}
             className="relative"
           >
-            <div className="absolute inset-x-[6%] top-4 bottom-0 rounded-[2.75rem] border border-violet-400/10 bg-gradient-to-b from-violet-500/8 via-transparent to-blue-500/6 shadow-[0_30px_90px_rgba(76,29,149,0.16)]" />
-            <ProjectCards3D works={works} limit={limit} showViewAll={showViewAll} />
+            <div
+              className={`absolute ${
+                isStandalonePage
+                  ? "inset-x-[2%] top-2 bottom-0"
+                  : "inset-x-[6%] top-4 bottom-0"
+              } rounded-[2.75rem] border border-violet-400/10 bg-gradient-to-b from-violet-500/8 via-transparent to-blue-500/6 shadow-[0_30px_90px_rgba(76,29,149,0.16)]`}
+            />
+            <ProjectCards3D
+              works={works}
+              limit={limit}
+              showViewAll={showViewAll}
+              layout={isStandalonePage ? "grid" : "rail"}
+            />
           </motion.div>
         )}
       </div>

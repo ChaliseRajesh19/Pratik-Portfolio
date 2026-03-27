@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom'
 function BlogCard({
   title = 'Designing Calm UI With Bold Type',
   excerpt = 'A quick walkthrough of layout rhythm, spacing systems, and type pairings.',
-date = 'Mar 02, 2026',
+  date = 'Mar 02, 2026',
   readTime = '6 min read',
   tags = [],
+  category = '',
+  featured = false,
   author = '',
   id = '',
   coverImage = '',
@@ -18,7 +20,7 @@ date = 'Mar 02, 2026',
     if (id) navigate(`/blog/${id}`)
   }
 
-  const primaryTag = Array.isArray(tags) && tags.length > 0 ? tags[0] : null
+  const primaryTag = category || (Array.isArray(tags) && tags.length > 0 ? tags[0] : null)
 
   return (
     <article
@@ -53,9 +55,16 @@ date = 'Mar 02, 2026',
       <div className="p-5">
         {/* Category pill */}
         {primaryTag && (
-          <span className="inline-block mb-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] bg-violet-500/15 border border-violet-500/30 text-violet-300">
-            {primaryTag}
-          </span>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] bg-violet-500/15 border border-violet-500/30 text-violet-300">
+              {primaryTag}
+            </span>
+            {featured ? (
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                Featured
+              </span>
+            ) : null}
+          </div>
         )}
 
         {/* Title */}

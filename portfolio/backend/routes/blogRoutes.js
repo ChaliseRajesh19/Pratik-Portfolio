@@ -16,19 +16,38 @@ function normalizeTags(tags = []) {
     return [];
 }
 
+function slugify(value = '') {
+    return `${value}`
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function buildBlogPayload(body = {}, existingBlog = null) {
-    const status = body.status === 'published' ? 'published' : 'draft';
+    const validStatuses = new Set(['draft', 'published', 'archived']);
+    const status = validStatuses.has(body.status) ? body.status : 'draft';
+    const slug = body.slug?.trim() || slugify(body.title || existingBlog?.title || '');
+    const parsedPublishedAt = body.publishedAt ? new Date(body.publishedAt) : null;
     const publishedAt = status === 'published'
-        ? existingBlog?.publishedAt || new Date()
+        ? (parsedPublishedAt && !Number.isNaN(parsedPublishedAt.getTime())
+            ? parsedPublishedAt
+            : existingBlog?.publishedAt || new Date())
         : null;
 
     return {
         title: body.title?.trim(),
         content: body.content,
         author: body.author?.trim(),
+        slug,
+        category: body.category?.trim() || 'General',
         excerpt: body.excerpt?.trim() || '',
         coverImage: body.coverImage?.trim() || '',
+        coverImageAlt: body.coverImageAlt?.trim() || '',
         tags: normalizeTags(body.tags),
+        featured: Boolean(body.featured),
+        seoTitle: body.seoTitle?.trim() || '',
+        seoDescription: body.seoDescription?.trim() || '',
         status,
         publishedAt,
         date: existingBlog?.date || new Date(),
@@ -48,7 +67,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const blogs = await Blog.find().sort({ publishedAt: -1, createdAt: -1, date: -1 });
+        const blogs = await Blog.find().sort({ featured: -1, publishedAt: -1, createdAt: -1, date: -1 });
         res.status(200).json(blogs);
     }
     catch (error){

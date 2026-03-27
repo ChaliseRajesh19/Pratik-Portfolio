@@ -182,6 +182,8 @@ export default function Blog({ withTopOffset = true }) {
                       date={formatDate(blog.date) || undefined}
                       readTime={estimateReadTime(blog.content)}
                       author={blog.author}
+                      category={blog.category}
+                      featured={blog.featured}
                       tags={blog.tags}
                       coverImage={assetUrl(blog.coverImage)}
                     />

@@ -88,13 +88,15 @@ export function SectionMotionShell({
       <div className="section-noise absolute inset-0 opacity-30" aria-hidden="true" />
 
       {ghostLabel ? (
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-2 top-10 text-[4.25rem] font-black uppercase tracking-[0.35em] text-white/[0.03] md:right-8 md:top-6 md:text-[10rem]"
-          style={{ x: ghostX, rotate: ghostRotate }}
-        >
-          {ghostLabel}
-        </motion.div>
+        <div className="pointer-events-none absolute inset-x-0 top-8 flex justify-center overflow-visible md:top-6">
+          <motion.div
+            aria-hidden="true"
+            className="whitespace-nowrap px-4 text-center text-[18vw] font-black uppercase tracking-[0.16em] text-white/[0.03] md:text-[10rem] md:tracking-[0.24em]"
+            style={{ x: ghostX, rotate: ghostRotate }}
+          >
+            {ghostLabel}
+          </motion.div>
+        </div>
       ) : null}
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />

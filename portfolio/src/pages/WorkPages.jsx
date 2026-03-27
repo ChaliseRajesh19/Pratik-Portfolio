@@ -506,9 +506,7 @@ function WorkPages() {
         {!loading && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "70px 0" }}>
             <p style={{ color: "#475569", fontSize: 14 }}>
-              {search
-                ? "No works match your search."
-                : "No works in this category yet."}
+              No works in this category yet.
             </p>
           </div>
         )}

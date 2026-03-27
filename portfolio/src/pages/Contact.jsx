@@ -10,6 +10,7 @@ import {
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
 
+const contactChips = ["fast reply", "global remote", "high polish"];
 
 const CustomSelect = ({ label, options, value, onChange, name }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -116,6 +117,7 @@ function Contact({ withTopOffset = true }) {
   const panelY = useTransform(scrollYProgress, [0, 1], [-40, 60]);
   const signalScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.92, 1.06, 0.96]);
   const signalRotate = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const counterSignalRotate = useTransform(signalRotate, (value) => value * -0.7);
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -175,7 +177,16 @@ function Contact({ withTopOffset = true }) {
           subtitle="Tell me about your project, goals, and timeline. I will reply within 24-48 hours."
         />
 
-       
+        <div className="mb-8 flex flex-wrap justify-center gap-3">
+          {contactChips.map((chip) => (
+            <span
+              key={chip}
+              className="rounded-full border border-indigo-400/15 bg-slate-950/70 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-indigo-100/85 shadow-[0_12px_30px_rgba(2,6,23,0.38)] backdrop-blur-xl"
+            >
+              {chip}
+            </span>
+          ))}
+        </div>
 
         <div className="relative grid lg:grid-cols-5 gap-8 lg:gap-12 items-start">
           <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden lg:flex -translate-x-1/2 items-center justify-center">
@@ -189,7 +200,7 @@ function Contact({ withTopOffset = true }) {
               />
               <motion.div
                 className="absolute h-72 w-72 rounded-full border border-blue-300/10"
-                style={{ rotate: useTransform(signalRotate, (value) => value * -0.7) }}
+                style={{ rotate: counterSignalRotate }}
               />
               <div className="signal-pulse absolute h-5 w-5 rounded-full bg-cyan-300/35 blur-sm" />
               <div className="h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.75)]" />
