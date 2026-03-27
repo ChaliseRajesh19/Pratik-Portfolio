@@ -16,7 +16,7 @@ const EditIcon = () => (
 function UploadCard({ work, onEdit, onDelete }) {
   const [hovered, setHovered] = React.useState(false)
   const imageSrc = assetUrl(work.imageURL)
-  const headline = work.headline || 'Untitled Image Set'
+  const headline = work.headline || work.title || 'Untitled Image Set'
 
   return (
     <div

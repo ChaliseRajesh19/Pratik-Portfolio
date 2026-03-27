@@ -19,7 +19,7 @@ function UploadForm({
 
   React.useEffect(() => {
     if (initialWork) {
-      setHeadline(initialWork.headline || "");
+      setHeadline(initialWork.headline || initialWork.title || "");
       setCategory(initialWork.category || categories[0] || "");
       setExistingGalleryImages(initialWork.galleryImages || []);
       setPreviewImageUrl(initialWork.imageURL || "");
@@ -45,6 +45,7 @@ function UploadForm({
 
     const formData = new FormData();
     formData.append("headline", headline.trim());
+    formData.append("title", headline.trim());
     formData.append("category", category);
 
     if (previewImage) formData.append("image", previewImage);
@@ -68,8 +69,8 @@ function UploadForm({
 
       toast.success(
         initialWork
-          ? "Portfolio item updated successfully."
-          : "Portfolio item uploaded successfully.",
+          ? `Updated images in ${category} successfully.`
+          : `Uploaded images to ${category} successfully.`,
       );
 
       setHeadline("");
@@ -81,7 +82,12 @@ function UploadForm({
       if (onUploaded) onUploaded(category);
     } catch (err) {
       toast.error(
-        getErrorMessage(err, initialWork ? "Update failed" : "Upload failed"),
+        getErrorMessage(
+          err,
+          initialWork
+            ? `Failed to update images in ${category}`
+            : `Failed to upload images to ${category}`,
+        ),
       );
     } finally {
       setLoading(false);

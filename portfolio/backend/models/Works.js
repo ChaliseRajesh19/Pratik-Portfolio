@@ -2,6 +2,7 @@ import { Schema, model } from 'mongoose';
 
 const WorksSchema = new Schema(
     {
+        title : {type : String, default : ''},
         headline : {type : String, default : ''},
         category : {type : String, required : true},
         imageURL : {type : String, required : true},

@@ -10,7 +10,8 @@ router.post('/upload', authMiddleware, upload.fields([
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
   try {
-    const { headline, category } = req.body;
+    const { headline, title, category } = req.body;
+    const resolvedHeadline = headline?.trim() || title?.trim() || '';
     
     // req.files is an object where keys are field names
     const mainImageFile = req.files && req.files['image'] ? req.files['image'][0] : null;
@@ -24,7 +25,8 @@ router.post('/upload', authMiddleware, upload.fields([
     const galleryImagePaths = galleryFiles.map(file => file.path);
 
     const newWork = new Work({
-      headline: headline?.trim() || '',
+      title: resolvedHeadline,
+      headline: resolvedHeadline,
       category,
       imageURL: mainImageFile.path,
       galleryImages: galleryImagePaths
@@ -62,9 +64,11 @@ router.put('/:id', authMiddleware, upload.fields([
   { name: 'galleryImages', maxCount: 50 }
 ]), async (req, res) => {
   try {
-    const { headline, category, existingGalleryImages } = req.body;
+    const { headline, title, category, existingGalleryImages } = req.body;
+    const resolvedHeadline = headline?.trim() || title?.trim() || '';
     let updateData = {
-      headline: headline?.trim() || '',
+      title: resolvedHeadline,
+      headline: resolvedHeadline,
       category,
     };
 

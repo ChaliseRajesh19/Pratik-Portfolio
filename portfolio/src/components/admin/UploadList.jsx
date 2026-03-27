@@ -54,10 +54,10 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
     try {
       await api.delete(`/api/works/${deleteWorkItem._id}`)
       setWorks(prev => prev.filter(item => item._id !== deleteWorkItem._id))
-      toast.success('Work deleted successfully')
+      toast.success(`Deleted images from ${deleteWorkItem?.category || 'category'} successfully.`)
       setDeleteWorkItem(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error deleting work'))
+      toast.error(getErrorMessage(err, 'Failed to delete portfolio images'))
     } finally {
       setIsDeleting(false)
     }
@@ -66,6 +66,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
   const filteredWorks = works.filter(w => 
     !search || 
     w.headline?.toLowerCase().includes(search.toLowerCase()) ||
+    w.title?.toLowerCase().includes(search.toLowerCase()) ||
     w.category?.toLowerCase().includes(search.toLowerCase())
   )
 

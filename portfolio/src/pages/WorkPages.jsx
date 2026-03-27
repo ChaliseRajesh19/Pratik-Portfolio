@@ -12,7 +12,7 @@ function WorkDetailsModal({ work, onClose }) {
       : [work.imageURL];
 
   const parsedImages = images.map((img) => (img ? assetUrl(img) : ""));
-  const headline = work.headline || "Portfolio Image";
+  const headline = work.headline || work.title || "Portfolio Image";
 
   useEffect(() => {
     const h = (e) => {
@@ -123,7 +123,7 @@ function WorkDetailsModal({ work, onClose }) {
 function WorkCard({ work, index, onClick }) {
   const [hovered, setHovered] = useState(false);
   const src = assetUrl(work.imageURL);
-  const headline = work.headline || "Portfolio Image";
+  const headline = work.headline || work.title || "Portfolio Image";
   const imageCount = (work.galleryImages?.length || 0) + 1;
 
   return (
