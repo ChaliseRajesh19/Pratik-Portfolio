@@ -1,8 +1,10 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import api, { getErrorMessage } from '../../lib/api'
+import { useServices } from '../../hooks/useServices'
+import { getErrorMessage } from '../../lib/api'
 
 function ServiceForm({ onCreated, initialService, onCancel }) {
+    const { createService, updateService } = useServices();
     const [title, setTitle] = React.useState('')
     const [description, setDescription] = React.useState('')
     const [imageFile, setImageFile] = React.useState(null)
@@ -17,32 +19,18 @@ function ServiceForm({ onCreated, initialService, onCancel }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault()
-
-        if (!title.trim() || !description.trim()) {
-            toast.error('Please fill in all fields.')
-            return
-        }
-        if (!initialService && !imageFile) {
-            toast.error('Please select an image.')
-            return
-        }
-
-        const formData = new FormData()
-        formData.append('title', title.trim())
-        formData.append('description', description.trim())
-        if (imageFile) formData.append('image', imageFile)
+        if (!title.trim() || !description.trim()) { toast.error('Please fill in all fields.'); return }
+        if (!initialService && !imageFile) { toast.error('Please select an image.'); return }
 
         try {
             setLoading(true)
-            await (initialService
-                ? api.put(`/api/services/${initialService._id}`, formData)
-                : api.post('/api/services', formData))
-
-            toast.success(initialService ? 'Service updated successfully.' : 'Service created successfully.')
-            if (!initialService) {
-                setTitle('')
-                setDescription('')
-                setImageFile(null)
+            if (initialService) {
+                await updateService(initialService._id, { title: title.trim(), description: description.trim(), imageFile })
+                toast.success('Service updated successfully.')
+            } else {
+                await createService({ title: title.trim(), description: description.trim(), imageFile })
+                toast.success('Service created successfully.')
+                setTitle(''); setDescription(''); setImageFile(null)
             }
             if (onCreated) onCreated()
         } catch (err) {
@@ -61,22 +49,27 @@ function ServiceForm({ onCreated, initialService, onCancel }) {
             <form onSubmit={handleSubmit} className="space-y-5 max-w-5xl">
                 <label className="block text-sm font-medium text-slate-300">
                     Title
-                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring" />
+                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
+                        className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring" />
                 </label>
                 <label className="block text-sm font-medium text-slate-300">
                     Description
-                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring resize-none" />
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3}
+                        className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring resize-none" />
                 </label>
                 <label className="block text-sm font-medium text-slate-300">
                     Service Icon/Image {initialService && <span className="text-slate-500 font-normal">(Leave empty to keep existing)</span>}
-                    <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="mt-2 w-full rounded-xl border border-dashed border-slate-700/80 bg-slate-950/40 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-900" />
+                    <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        className="mt-2 w-full rounded-xl border border-dashed border-slate-700/80 bg-slate-950/40 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-900" />
                 </label>
                 <div className="flex gap-3">
-                    <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70">
+                    <button type="submit" disabled={loading}
+                        className="flex-1 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70">
                         {loading ? (initialService ? 'Updating...' : 'Creating...') : (initialService ? 'Update Service' : 'Create Service')}
                     </button>
                     {onCancel && (
-                        <button type="button" onClick={onCancel} className="rounded-xl border border-slate-700/80 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500">
+                        <button type="button" onClick={onCancel}
+                            className="rounded-xl border border-slate-700/80 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500">
                             Cancel
                         </button>
                     )}

@@ -3,43 +3,27 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import CategoryForm from './CategoryForm'
-import api, { getErrorMessage } from '../../lib/api'
+import { useCategories } from '../../hooks/useCategories'
 
 function CategoryList({ refreshKey }) {
-    const [categories, setCategories] = React.useState([])
-    const [loading, setLoading] = React.useState(false)
+    const { categories, loading, deleteCategory, refetch } = useCategories()
     const [search, setSearch] = React.useState('')
     const [deleteItem, setDeleteItem] = React.useState(null)
     const [isDeleting, setIsDeleting] = React.useState(false)
     const [isUploadOpen, setIsUploadOpen] = React.useState(false)
     const [editItem, setEditItem] = React.useState(null)
 
-    const loadCategories = async () => {
-            setLoading(true)
-            try {
-                const { data } = await api.get('/api/categories')
-                setCategories(data)
-            } catch (err) {
-                toast.error(getErrorMessage(err, 'Failed to load categories'))
-            } finally {
-                setLoading(false)
-            }
-        }
-
-    React.useEffect(() => {
-        loadCategories()
-    }, [refreshKey, isUploadOpen, editItem])
+    React.useEffect(() => { refetch() }, [refreshKey])
 
     const handleDeleteConfirm = async () => {
         if (!deleteItem) return
         setIsDeleting(true)
         try {
-            await api.delete(`/api/categories/${deleteItem._id}`)
-            setCategories(prev => prev.filter(c => c._id !== deleteItem._id))
+            await deleteCategory(deleteItem._id)
             toast.success('Category deleted successfully')
             setDeleteItem(null)
         } catch (err) {
-            toast.error(getErrorMessage(err, 'Failed to delete category'))
+            toast.error(err.message || 'Failed to delete category')
         } finally {
             setIsDeleting(false)
         }
@@ -147,7 +131,7 @@ function CategoryList({ refreshKey }) {
                     onCreated={() => {
                         setIsUploadOpen(false)
                         setEditItem(null)
-                        loadCategories()
+                        refetch()
                     }}
                     onCancel={() => {
                         setIsUploadOpen(false)

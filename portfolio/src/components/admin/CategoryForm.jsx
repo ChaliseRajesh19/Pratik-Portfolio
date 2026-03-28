@@ -1,6 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import api, { getErrorMessage } from '../../lib/api'
+import { useCategories } from '../../hooks/useCategories'
 
 const ICON_CHOICES = [
   '🎨','✏️','🖌️','📐','📏','🖊️','🗂️','🖼️','💡','⭐',
@@ -8,6 +8,7 @@ const ICON_CHOICES = [
 ]
 
 function CategoryForm({ onCreated, initialCategory, onCancel }) {
+    const { createCategory, updateCategory } = useCategories()
     const [name, setName] = React.useState('')
     const [slug, setSlug] = React.useState('')
     const [description, setDescription] = React.useState('')
@@ -25,35 +26,24 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault()
-
         if (!name.trim() || !slug.trim() || !description.trim()) {
             toast.error('Please fill in all fields.')
             return
         }
-
         try {
             setLoading(true)
-            const payload = {
-                name: name.trim(),
-                slug: slug.trim().toLowerCase(),
-                description: description.trim(),
-                icon,
-            }
-
-            await (initialCategory
-                ? api.put(`/api/categories/${initialCategory._id}`, payload)
-                : api.post('/api/categories', payload))
-
-            toast.success(initialCategory ? 'Category updated successfully.' : 'Category created successfully.')
-            if (!initialCategory) {
-                setName('')
-                setSlug('')
-                setDescription('')
-                setIcon('🎨')
+            const payload = { name: name.trim(), slug: slug.trim().toLowerCase(), description: description.trim(), icon }
+            if (initialCategory) {
+                await updateCategory(initialCategory._id, payload)
+                toast.success('Category updated successfully.')
+            } else {
+                await createCategory(payload)
+                toast.success('Category created successfully.')
+                setName(''); setSlug(''); setDescription(''); setIcon('🎨')
             }
             if (onCreated) onCreated()
         } catch (err) {
-            toast.error(getErrorMessage(err, initialCategory ? 'Failed to update category' : 'Failed to create category'))
+            toast.error(err.message || (initialCategory ? 'Failed to update category' : 'Failed to create category'))
         } finally {
             setLoading(false)
         }

@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import ProjectCards3D from "../components/three/ProjectCards3D";
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
-import api, { isRequestCanceled } from "../lib/api";
+import { useCategories } from "../hooks/useCategories";
 
 const marqueeItems = [
   "selected work",
@@ -32,33 +32,26 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
   const cardsScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1.02, 0.98]);
   const glowOpacity = useTransform(scrollYProgress, [0, 0.4, 0.8, 1], [0.15, 0.8, 0.5, 0.2]);
 
+  const { categories, loading: categoriesLoading } = useCategories();
+  
   React.useEffect(() => {
-    const controller = new AbortController();
-
-    api
-      .get("/api/categories", { signal: controller.signal })
-      .then(({ data }) => {
-        if (Array.isArray(data)) {
-          setWorks(
-            data.map((cat, i) => ({
-              id: cat._id || i,
-              title: cat.name,
-              description: cat.description || "",
-              pagename: cat.slug,
-              icon: cat.icon || "Art",
-            }))
-          );
-        }
-      })
-      .catch((error) => {
-        if (!isRequestCanceled(error)) {
-          setWorks([]);
-        }
-      })
-      .finally(() => setLoading(false));
-
-    return () => controller.abort();
-  }, []);
+    if (categories?.length > 0) {
+      setWorks(
+        categories.map((cat, i) => ({
+          id: cat._id || i,
+          title: cat.name,
+          description: cat.description || "",
+          pagename: cat.slug,
+          icon: cat.icon || "Art",
+        }))
+      );
+    } else {
+      setWorks([]);
+    }
+    if (!categoriesLoading) {
+      setLoading(false);
+    }
+  }, [categories, categoriesLoading]);
 
   return (
     <SectionMotionShell
@@ -117,13 +110,6 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
             }}
             className="relative"
           >
-            <div
-              className={`absolute ${
-                isStandalonePage
-                  ? "inset-x-[2%] top-2 bottom-0"
-                  : "inset-x-[6%] top-4 bottom-0"
-              } rounded-[2.75rem] border border-violet-400/10 bg-gradient-to-b from-violet-500/8 via-transparent to-blue-500/6 shadow-[0_30px_90px_rgba(76,29,149,0.16)]`}
-            />
             <ProjectCards3D
               works={works}
               limit={limit}

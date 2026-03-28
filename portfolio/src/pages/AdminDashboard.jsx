@@ -7,9 +7,11 @@ import ServiceForm from '../components/admin/ServiceForm'
 import ServiceList from '../components/admin/ServiceList'
 import CategoryForm from '../components/admin/CategoryForm'
 import CategoryList from '../components/admin/CategoryList'
+import TestimonialList from '../components/admin/TestimonialList'
 import { useNavigate, Link } from 'react-router-dom'
 import logoimg from '../assets/favicon.png'
-import api from '../lib/api'
+import { clearAdminToken } from '../lib/adminAuth'
+import { useCategories } from '../hooks/useCategories'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const WorksIcon = () => (
@@ -31,6 +33,11 @@ const BlogsIcon = () => (
   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
     <path d="M4 6h16M4 10h16M4 14h10" strokeLinecap="round" />
     <rect x="2" y="3" width="20" height="18" rx="2" />
+  </svg>
+)
+const TestimonialsIcon = () => (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
   </svg>
 )
 const LogoutIcon = () => (
@@ -76,6 +83,14 @@ const NAV = [
       { id: 'blog-list',   label: 'Manage Blogs' },
     ],
   },
+  {
+    id: 'testimonials',
+    label: 'Testimonials',
+    Icon: TestimonialsIcon,
+    subs: [
+      { id: 'testimonials-list', label: 'Manage Testimonials' },
+    ],
+  },
 ]
 
 // Map each view → which tab group it belongs to
@@ -99,7 +114,7 @@ function Sidebar({ view, setView, collapsed, setCollapsed }) {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken')
+    clearAdminToken()
     navigate('/admin/login')
   }
 
@@ -283,6 +298,7 @@ const TITLES = {
   'services-list':    { title: 'Manage Services',   sub: 'Review and remove existing services.' },
   'categories-list':  { title: 'Manage Categories', sub: 'Review active portfolio categories.' },
   'blog-list':        { title: 'Manage Blogs',      sub: 'Edit and manage your blog posts.' },
+  'testimonials-list':{ title: 'Manage Testimonials', sub: 'Add and manage homepage testimonials.' },
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -291,18 +307,16 @@ function AdminDashboard() {
   const [activeCategory, setActiveCategory] = React.useState('')
   const [refreshKey, setRefreshKey] = React.useState(0)
 
+  const { categories: rawCategories } = useCategories()
+
   // Fetch dynamic categories from API
   React.useEffect(() => {
-    api.get('/api/categories')
-      .then(({ data }) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const slugs = data.map(c => c.slug)
-          setCategories(slugs)
-          setActiveCategory(slugs[0])
-        }
-      })
-      .catch(() => {})
-  }, [])
+    if (rawCategories && rawCategories.length > 0) {
+      const slugs = rawCategories.map(c => c.slug)
+      setCategories(slugs)
+      setActiveCategory(slugs[0])
+    }
+  }, [rawCategories])
   const [view, setView] = React.useState('list')
   const [blogRefreshKey, setBlogRefreshKey] = React.useState(0)
   const [serviceRefreshKey, setServiceRefreshKey] = React.useState(0)
@@ -356,6 +370,10 @@ function AdminDashboard() {
 
           {view === 'blog-list' && (
             <BlogList refreshKey={blogRefreshKey} />
+          )}
+
+          {view === 'testimonials-list' && (
+            <TestimonialList refreshKey={0} />
           )}
         </div>
       </main>

@@ -3,50 +3,34 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import ServiceForm from './ServiceForm'
-import api, { assetUrl, getErrorMessage } from '../../lib/api'
+import { useServices } from '../../hooks/useServices'
 
 function ServiceList({ refreshKey }) {
-    const [services, setServices] = React.useState([])
-    const [loading, setLoading] = React.useState(false)
+    const { services, loading, deleteService, refetch } = useServices()
     const [search, setSearch] = React.useState('')
     const [deleteItem, setDeleteItem] = React.useState(null)
     const [isDeleting, setIsDeleting] = React.useState(false)
     const [isUploadOpen, setIsUploadOpen] = React.useState(false)
     const [editItem, setEditItem] = React.useState(null)
 
-    const loadServices = async () => {
-            setLoading(true)
-            try {
-                const { data } = await api.get('/api/services')
-                setServices(data)
-            } catch (err) {
-                toast.error(getErrorMessage(err, 'Failed to load services'))
-            } finally {
-                setLoading(false)
-            }
-        }
-
-    React.useEffect(() => {
-        loadServices()
-    }, [refreshKey, isUploadOpen, editItem])
+    React.useEffect(() => { refetch() }, [refreshKey])
 
     const handleDeleteConfirm = async () => {
         if (!deleteItem) return
         setIsDeleting(true)
         try {
-            await api.delete(`/api/services/${deleteItem._id}`)
-            setServices(prev => prev.filter(s => s._id !== deleteItem._id))
+            await deleteService(deleteItem._id)
             toast.success('Service deleted successfully')
             setDeleteItem(null)
         } catch (err) {
-            toast.error(getErrorMessage(err, 'Failed to delete service'))
+            toast.error(err.message || 'Failed to delete service')
         } finally {
             setIsDeleting(false)
         }
     }
 
-    const filteredServices = services.filter(s => 
-        !search || 
+    const filteredServices = services.filter(s =>
+        !search ||
         s.title?.toLowerCase().includes(search.toLowerCase()) ||
         s.description?.toLowerCase().includes(search.toLowerCase())
     )
@@ -104,7 +88,7 @@ function ServiceList({ refreshKey }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredServices.map(service => (
                         <div key={service._id} className="rounded-2xl border border-slate-800/70 bg-slate-950/50 p-5 flex flex-col items-center text-center">
-                            <img src={assetUrl(service.imageURL)} alt={service.title} className="w-16 h-16 object-cover rounded-xl mb-4" />
+                            <img src={service.imageURL} alt={service.title} className="w-16 h-16 object-cover rounded-xl mb-4" />
                             <h3 className="text-base font-semibold text-slate-100">{service.title}</h3>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={() => setEditItem(service)} className="rounded-full border border-slate-600/60 px-4 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-400">

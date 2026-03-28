@@ -4,60 +4,29 @@ import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import UploadForm from './UploadForm'
 import { toast } from 'react-hot-toast'
-import api, { getErrorMessage, isRequestCanceled } from '../../lib/api'
+import { useWorks } from '../../hooks/useWorks'
 
 function UploadList({ category, categories, onCategoryChange, refreshKey, onAddWork }) {
-  const [works, setWorks] = React.useState([])
-  const [loading, setLoading] = React.useState(false)
+  const fetchCategory = category === 'All Categories' ? undefined : category
+  const { works, loading, deleteWork, refetch } = useWorks({ category: fetchCategory })
   const [search, setSearch] = React.useState('')
   const [deleteWorkItem, setDeleteWorkItem] = React.useState(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [isUploadOpen, setIsUploadOpen] = React.useState(false)
   const [editWorkItem, setEditWorkItem] = React.useState(null)
 
-  // We should actually load ALL works if "All Categories" is selected.
-  // The API endpoint /api/works/:category might not support 'All'.
-  // We'll mimic 'All' by fetching without category if API allows, or handle via frontend filter if we have all.
-  // For now, assuming the API fetches works based on category string, we'll continue using the existing logic
-  // but let user search text within the displayed results.
-  
-  React.useEffect(() => {
-    // If we want an "All Categories" option, we might pass an empty string to fetch all.
-    // The previous implementation required a specific category to be selected.
-    // Assuming backend /api/works returns all if no category param, or we can fetch a specific one.
-    const fetchCategory = category === 'All Categories' ? '' : category;
-    
-    const controller = new AbortController()
-    const loadWorks = async () => {
-      setLoading(true)
-      try {
-        const { data } = await api.get(
-          fetchCategory ? `/api/works/${fetchCategory}` : '/api/works',
-          { signal: controller.signal }
-        )
-        setWorks(Array.isArray(data) ? data : [])
-      } catch (err) {
-        if (!isRequestCanceled(err)) toast.error(getErrorMessage(err, 'Failed to load works'))
-      } finally {
-        setLoading(false)
-      }
-    }
+  React.useEffect(() => { refetch() }, [refreshKey, category])
 
-    loadWorks()
-    return () => controller.abort()
-  }, [category, refreshKey, isUploadOpen, editWorkItem])
 
   const handleDeleteConfirm = async () => {
     if (!deleteWorkItem?._id) return
-    
     setIsDeleting(true)
     try {
-      await api.delete(`/api/works/${deleteWorkItem._id}`)
-      setWorks(prev => prev.filter(item => item._id !== deleteWorkItem._id))
+      await deleteWork(deleteWorkItem._id)
       toast.success(`Deleted images from ${deleteWorkItem?.category || 'category'} successfully.`)
       setDeleteWorkItem(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to delete portfolio images'))
+      toast.error(err.message || 'Failed to delete portfolio images')
     } finally {
       setIsDeleting(false)
     }

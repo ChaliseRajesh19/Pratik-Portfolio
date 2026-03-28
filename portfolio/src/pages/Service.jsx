@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ServiceCard from "../components/ServiceCard";
 import { SectionHeader } from "../components/SectionHeader";
 import { GridConnections } from "../components/GridConnections";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
-import api, { assetUrl, getErrorMessage } from "../lib/api";
+import { useServices } from "../hooks/useServices";
 
 const marqueeItems = [
   "brand identity",
@@ -16,8 +16,7 @@ const marqueeItems = [
 ];
 
 function Service({ withTopOffset = true }) {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { services, loading } = useServices()
   const stageRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -30,18 +29,6 @@ function Service({ withTopOffset = true }) {
   const stageScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.96, 1.02, 0.98]);
   const beamOpacity = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [0.2, 0.8, 0.5, 0.2]);
 
-  useEffect(() => {
-    api
-      .get("/api/services")
-      .then(({ data }) => {
-        setServices(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch services:", getErrorMessage(err));
-        setLoading(false);
-      });
-  }, []);
 
   return (
     <SectionMotionShell
@@ -99,19 +86,15 @@ function Service({ withTopOffset = true }) {
                 <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
               </div>
             ) : services.length > 0 ? (
-              services.map((service, index) => {
-                const iconSrc = assetUrl(service.imageURL);
-
-                return (
+              services.map((service, index) => (
                   <ServiceCard
                     key={service._id}
                     index={index}
                     title={service.title}
                     description={service.description}
-                    icon={iconSrc}
+                    icon={service.imageURL}
                   />
-                );
-              })
+                ))
             ) : (
               <p className="col-span-full text-center text-slate-400">
                 No services currently available.

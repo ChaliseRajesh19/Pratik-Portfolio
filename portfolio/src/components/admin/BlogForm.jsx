@@ -1,7 +1,8 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
 import BlogEditor from './BlogEditor'
-import api, { assetUrl, getErrorMessage } from '../../lib/api'
+import { useBlogs } from '../../hooks/useBlogs'
+import { uploadFile } from '../../lib/storage'
 
 const BLOG_CATEGORIES = [
 	'General',
@@ -21,7 +22,6 @@ const BLOG_CATEGORIES = [
 const BLOG_STATUSES = [
 	{ value: 'draft', label: 'Draft' },
 	{ value: 'published', label: 'Published' },
-	{ value: 'archived', label: 'Archived' },
 ]
 
 function toDateTimeLocal(value) {
@@ -38,6 +38,7 @@ function stripHtml(value = '') {
 }
 
 function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel }) {
+	const { createBlog, updateBlog } = useBlogs()
 	const [title, setTitle] = React.useState('')
 	const [author, setAuthor] = React.useState('')
 	const [slug, setSlug] = React.useState('')
@@ -49,7 +50,6 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 	const [coverImagePreview, setCoverImagePreview] = React.useState('')
 	const [coverImageAlt, setCoverImageAlt] = React.useState('')
 	const [status, setStatus] = React.useState('draft')
-	const [publishedAt, setPublishedAt] = React.useState('')
 	const [featured, setFeatured] = React.useState(false)
 	const [seoTitle, setSeoTitle] = React.useState('')
 	const [seoDescription, setSeoDescription] = React.useState('')
@@ -68,10 +68,9 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 			setTagsInput(Array.isArray(initialBlog.tags) ? initialBlog.tags.join(', ') : '')
 			setExcerpt(initialBlog.excerpt || '')
 			setCoverImage(null)
-			setCoverImagePreview(assetUrl(initialBlog.coverImage || ''))
+			setCoverImagePreview(initialBlog.coverImage || '')
 			setCoverImageAlt(initialBlog.coverImageAlt || '')
 			setStatus(initialBlog.status || 'draft')
-			setPublishedAt(toDateTimeLocal(initialBlog.publishedAt))
 			setFeatured(Boolean(initialBlog.featured))
 			setSeoTitle(initialBlog.seoTitle || '')
 			setSeoDescription(initialBlog.seoDescription || '')
@@ -87,7 +86,6 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 			setCoverImagePreview('')
 			setCoverImageAlt('')
 			setStatus('draft')
-			setPublishedAt('')
 			setFeatured(false)
 			setSeoTitle('')
 			setSeoDescription('')
@@ -123,10 +121,14 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 			setLoading(true)
 			let coverImageUrl = initialBlog?.coverImage || ''
 			if (coverImage) {
-				const formData = new FormData()
-				formData.append('image', coverImage)
-				const { data: uploadData } = await api.post('/api/upload', formData)
-				coverImageUrl = uploadData.url || coverImageUrl
+				const toastId = toast.loading('Uploading cover image...')
+				try {
+					coverImageUrl = await uploadFile(coverImage, 'blog-images')
+				} catch (err) {
+					toast.dismiss(toastId)
+					throw new Error('Image upload failed: ' + err.message)
+				}
+				toast.dismiss(toastId)
 			}
 
 			const payload = {
@@ -140,27 +142,22 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 				coverImage: coverImageUrl,
 				coverImageAlt: coverImageAlt.trim(),
 				status,
-				publishedAt: publishedAt || null,
 				featured,
 				seoTitle: seoTitle.trim(),
 				seoDescription: seoDescription.trim(),
 			}
 
-			await (
-				isEditing
-					? api.put(`/api/blogs/${initialBlog._id}`, payload)
-					: api.post('/api/blogs/create', payload)
-			)
-
 			if (isEditing) {
+				await updateBlog(initialBlog._id, payload)
 				toast.success('Blog post updated!')
 				if (onUpdated) onUpdated()
 			} else {
+				await createBlog(payload)
 				toast.success('Blog post created!')
 				if (onCreated) onCreated()
 			}
 		} catch (err) {
-			toast.error(getErrorMessage(err, 'Failed to save blog'))
+			toast.error(err.message || 'Failed to save blog')
 		} finally {
 			setLoading(false)
 		}
@@ -243,7 +240,7 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 						</datalist>
 					</div>
 
-					<div className="border border-slate-800/60 rounded-xl overflow-hidden">
+					<div className="rounded-xl">
 						<BlogEditor value={content} onChange={setContent} />
 					</div>
 				</div>
@@ -270,14 +267,6 @@ function BlogForm({ onCreated, onUpdated, initialBlog, onCancelEdit, onCancel })
 									<option key={option.value} value={option.value}>{option.label}</option>
 								))}
 							</select>
-
-							<label className="block text-xs text-slate-400 mt-3 mb-1">Publish Date</label>
-							<input
-								type="datetime-local"
-								value={publishedAt}
-								onChange={(e) => setPublishedAt(e.target.value)}
-								className="w-full rounded-lg border border-slate-700/60 bg-slate-900 text-sm text-slate-100 px-3 py-2 outline-none focus:border-violet-500/50"
-							/>
 
 							<label className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-slate-700/60 bg-slate-900/70 px-3 py-2.5">
 								<div>

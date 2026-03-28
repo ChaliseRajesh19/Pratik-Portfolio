@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
-import api, { assetUrl, getErrorMessage, isRequestCanceled } from "../lib/api";
+import { useBlogs } from "../hooks/useBlogs";
+import { getErrorMessage } from "../lib/api";
 
 /* ── Reading progress bar ── */
 function ReadingProgress() {
@@ -112,6 +113,7 @@ function BlogComments() {
 
 export default function BlogPost() {
   const { id } = useParams();
+  const { getBlogById } = useBlogs();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,31 +121,36 @@ export default function BlogPost() {
 
   /* ── fetch ── */
   useEffect(() => {
-    const controller = new AbortController();
-    const loadBlog = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const { data } = await api.get(`/api/blogs/${id}`, {
-          signal: controller.signal,
-        });
-        setBlog(data);
-      } catch (err) {
-        if (!isRequestCanceled(err)) {
-          setError(getErrorMessage(err, "Unable to load blog"));
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) loadBlog();
-    return () => controller.abort();
+    if (!id) return;
+    setLoading(true);
+    setError("");
+    getBlogById(id)
+      .then(data => setBlog(data))
+      .catch(err => setError(getErrorMessage(err, "Unable to load blog")))
+      .finally(() => setLoading(false));
   }, [id]);
 
   /* ── tab title ── */
   useEffect(() => {
     if (blog?.title) document.title = `${blog.title} | Pratik`;
     return () => { document.title = "Pratik Bhusal — Creative Designer"; };
+  }, [blog]);
+
+  useEffect(() => {
+    if (!articleRef.current) return;
+
+    const anchors = articleRef.current.querySelectorAll(".blog-prose a[href]");
+    anchors.forEach((anchor) => {
+      const href = anchor.getAttribute("href")?.trim();
+      if (!href) return;
+
+      if (/^www\./i.test(href)) {
+        anchor.setAttribute("href", `https://${href}`);
+      }
+
+      anchor.setAttribute("target", "_blank");
+      anchor.setAttribute("rel", "noopener noreferrer");
+    });
   }, [blog]);
 
   /* ── helpers ── */
@@ -237,7 +244,7 @@ export default function BlogPost() {
               <div className="relative overflow-hidden rounded-2xl mb-6 h-64 sm:h-80 bg-gradient-to-br from-slate-800 to-slate-900">
                 {blog.coverImage ? (
                   <img
-                    src={assetUrl(blog.coverImage)}
+                    src={blog.coverImage}
                     alt={blog.title}
                     className="w-full h-full object-cover"
                   />
@@ -408,6 +415,11 @@ export default function BlogPost() {
           line-height: 1.75;
           color: #cbd5e1;
         }
+        .blog-prose::after {
+          content: '';
+          display: block;
+          clear: both;
+        }
         .blog-prose p {
           margin-bottom: 1.4rem;
         }
@@ -480,6 +492,33 @@ export default function BlogPost() {
           border-radius: 12px;
           margin: 1.5rem auto;
           display: block;
+        }
+        .blog-prose img[data-placement='left'] {
+          float: left;
+          display: inline;
+          max-width: min(48%, 320px);
+          margin: 0 1rem 1rem 0;
+        }
+        .blog-prose img[data-placement='center'] {
+          float: none;
+          display: block;
+          max-width: 100%;
+          margin: 1.5rem auto;
+        }
+        .blog-prose img[data-placement='right'] {
+          float: right;
+          display: inline;
+          max-width: min(48%, 320px);
+          margin: 0 0 1rem 1rem;
+        }
+        @media (max-width: 640px) {
+          .blog-prose img[data-placement='left'],
+          .blog-prose img[data-placement='right'] {
+            float: none;
+            display: block;
+            max-width: 100%;
+            margin: 1rem auto;
+          }
         }
       `}</style>
     </>

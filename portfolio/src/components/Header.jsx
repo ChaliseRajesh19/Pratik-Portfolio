@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "./Logo";
+import { hasValidAdminToken } from "../lib/adminAuth";
 
 /* ── Nav items ──────────────────────────────────────────────── */
 const NAV_ITEMS = [
@@ -50,6 +51,7 @@ function Header() {
   const [activeHash, setActiveHash] = useState("#home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showAdminLink, setShowAdminLink] = useState(() => hasValidAdminToken());
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -93,6 +95,9 @@ function Header() {
   }, [isHomeRoute, sectionIds]);
 
   useEffect(() => setIsMenuOpen(false), [location.pathname, location.hash]);
+  useEffect(() => {
+    setShowAdminLink(hasValidAdminToken());
+  }, [location.pathname]);
 
   const isActive = (hash) => {
     if (!hash.startsWith("#")) {
@@ -213,7 +218,7 @@ function Header() {
 
           {/* ── Desktop Actions ── */}
           <div className="hidden md:flex items-center ml-auto">
-            {localStorage.getItem("adminToken") && (
+            {showAdminLink && (
               <NavLink
                 to="/admin/dashboard"
                 className="ml-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 mr-2"
@@ -392,7 +397,7 @@ function Header() {
                 {/* Divider */}
                 <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent mb-5" />
 
-                {localStorage.getItem("adminToken") && (
+                {showAdminLink && (
                   <NavLink
                     to="/admin/dashboard"
                     onClick={() => setIsMenuOpen(false)}

@@ -5,6 +5,7 @@ import About from "./About";
 import Service from "./Service";
 import Portfolio from "./Portfolio";
 import Contact from "./Contact";
+import Testimonials from "../components/Testimonials";
 import { DesignOrb } from "../components/three/DesignOrb";
 import { HeroScene } from "../components/three/HeroScene";
 
@@ -221,6 +222,9 @@ function Home() {
       </div>
       <div id="portfolio" className="scroll-mt-24">
         <Portfolio withTopOffset={false} limit={6} showViewAll={true} />
+      </div>
+      <div id="testimonials" className="scroll-mt-24">
+        <Testimonials />
       </div>
       <div id="contact" className="scroll-mt-24">
         <Contact withTopOffset={false} />

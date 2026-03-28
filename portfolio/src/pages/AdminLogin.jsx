@@ -1,28 +1,30 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom';
-import api, { getErrorMessage } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
+import { getErrorMessage } from '../lib/api';
 
 function AdminLogin() {
   const navigate = useNavigate();
+  const { login, session, loading: sessionLoading } = useAuth();
 
   React.useEffect(() => {
-    if (localStorage.getItem('adminToken')) {
+    if (!sessionLoading && session) {
       navigate('/admin/dashboard', { replace: true });
     }
-  }, [navigate]);
+  }, [session, sessionLoading, navigate]);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.post('/api/auth/login', { email, password });
-      localStorage.setItem('adminToken', data.token);
+      await login(email, password);
       navigate('/admin/dashboard');
     } catch (err) {
       setError(getErrorMessage(err, 'Login failed'));
@@ -30,6 +32,7 @@ function AdminLogin() {
       setLoading(false);
     }
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100">
       <div className="relative overflow-hidden">
@@ -67,7 +70,6 @@ function AdminLogin() {
                   Email address
                   <input
                     type="email"
-                    name="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@pratik.com"
@@ -82,7 +84,6 @@ function AdminLogin() {
                   <div className="relative mt-2">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      name="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
@@ -92,32 +93,13 @@ function AdminLogin() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
+                      onClick={() => setShowPassword(prev => !prev)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-emerald-300 transition hover:text-emerald-200"
-                      aria-pressed={showPassword}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
                 </label>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                  <label className="flex items-center gap-2 text-slate-400">
-                    <input
-                      type="checkbox"
-                      name="remember"
-                      className="h-4 w-4 rounded border-slate-700 bg-slate-950/60 text-emerald-400 focus:ring-emerald-400/60"
-                    />
-                    Remember me
-                  </label>
-                  <button
-                    type="button"
-                    className="text-emerald-300 transition hover:text-emerald-200"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
 
                 <button
                   type="submit"

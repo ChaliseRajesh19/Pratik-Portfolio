@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 /**
@@ -201,17 +201,30 @@ export function ProjectCards3D({
   }, [])
 
   const ViewAllBtn = () => (
-    <div className="flex justify-center mt-10">
-      <button
-        type="button"
-        onClick={() => navigate('/portfolio')}
-        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[11px] uppercase tracking-[0.2em] text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-all duration-300"
-      >
-        View All Works
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-        </svg>
-      </button>
+    <div className="relative z-20 mt-10 flex justify-center">
+      <motion.div whileHover={{ y: -3, scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+        <Link
+          to="/portfolio"
+          className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/[0.06] px-6 py-3 text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-300 shadow-[0_18px_50px_rgba(8,145,178,0.14)] transition-all duration-300 hover:border-cyan-300/55 hover:bg-cyan-400/[0.14] hover:text-white hover:shadow-[0_24px_60px_rgba(8,145,178,0.24)]"
+        >
+          <span>View All Works</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-300 group-hover:translate-x-1.5"
+          >
+            <path d="M5 12h14"/>
+            <path d="m12 5 7 7-7 7"/>
+          </svg>
+        </Link>
+      </motion.div>
     </div>
   )
 

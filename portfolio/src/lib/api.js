@@ -1,53 +1,34 @@
-import axios from "axios";
+// api.js — thin compatibility shim
+// All data fetching now uses the Supabase client directly.
+// This file only exports helpers used across the codebase.
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://portfolio-backend-r2k1.vercel.app";
-
-function trimTrailingSlash(value) {
-  return value ? value.replace(/\/+$/, "") : "";
-}
-export const RESOLVED_API_BASE_URL = trimTrailingSlash(API_BASE_URL);
-
-export const api = axios.create({
-  baseURL: RESOLVED_API_BASE_URL,
-});
-
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("adminToken");
-    if (token) {
-      config.headers = config.headers ?? {};
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return config;
-});
-
-export function apiUrl(path = "") {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${RESOLVED_API_BASE_URL}${cleanPath}`;
-}
-
-export function assetUrl(path = "") {
-  if (!path) return "";
-  if (/^https?:\/\//i.test(path)) return path;
-
-  const cleanPath = path.replace(/\\/g, "/");
-  return `${RESOLVED_API_BASE_URL}${cleanPath.startsWith("/") ? "" : "/"}${cleanPath}`;
-}
-
-export function getErrorMessage(error, fallback = "Something went wrong") {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || fallback;
-  }
-
-  return error instanceof Error ? error.message : fallback;
+export function getErrorMessage(error, fallback = 'Something went wrong') {
+    if (!error) return fallback;
+    if (typeof error === 'string') return error;
+    return error?.message || fallback;
 }
 
 export function isRequestCanceled(error) {
-  return axios.isCancel(error) || error?.code === "ERR_CANCELED";
+    return error?.name === 'AbortError' || error?.code === 'ERR_CANCELED';
 }
 
+// assetUrl — images from Supabase Storage are already absolute public URLs
+export function assetUrl(url = '') {
+    return url || '';
+}
+
+export function apiUrl(path = '') {
+    return path;
+}
+
+export const API_BASE_URL = '';
+export const RESOLVED_API_BASE_URL = '';
+
+// Default export stub — nothing should call api.get/post anymore
+const api = {
+    get: () => Promise.reject(new Error('Use Supabase client directly')),
+    post: () => Promise.reject(new Error('Use Supabase client directly')),
+    put: () => Promise.reject(new Error('Use Supabase client directly')),
+    delete: () => Promise.reject(new Error('Use Supabase client directly')),
+};
 export default api;

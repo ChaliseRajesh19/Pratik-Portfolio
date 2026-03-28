@@ -3,43 +3,27 @@ import { toast } from 'react-hot-toast'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AdminModal from './AdminModal'
 import BlogForm from './BlogForm'
-import api, { assetUrl, getErrorMessage } from '../../lib/api'
+import { useBlogs } from '../../hooks/useBlogs'
 
 function BlogList({ refreshKey, onEdit }) {
-	const [blogs, setBlogs] = React.useState([])
-	const [loading, setLoading] = React.useState(false)
+	const { blogs, loading, deleteBlog, refetch } = useBlogs()
 	const [search, setSearch] = React.useState('')
 	const [deleteItem, setDeleteItem] = React.useState(null)
 	const [isDeleting, setIsDeleting] = React.useState(false)
 	const [isUploadOpen, setIsUploadOpen] = React.useState(false)
 	const [editItem, setEditItem] = React.useState(null)
 
-	const loadBlogs = async () => {
-			setLoading(true)
-			try {
-				const { data } = await api.get('/api/blogs')
-				setBlogs(data)
-			} catch (err) {
-				toast.error(getErrorMessage(err, 'Failed to load blogs'))
-			} finally {
-				setLoading(false)
-			}
-		}
-
-	React.useEffect(() => {
-		loadBlogs()
-	}, [refreshKey, isUploadOpen, editItem])
+	React.useEffect(() => { refetch() }, [refreshKey])
 
 	const handleDeleteConfirm = async () => {
 		if (!deleteItem) return
 		setIsDeleting(true)
 		try {
-			await api.delete(`/api/blogs/${deleteItem._id}`)
-			setBlogs((prev) => prev.filter((item) => item._id !== deleteItem._id))
+			await deleteBlog(deleteItem._id)
 			toast.success('Blog deleted successfully')
 			setDeleteItem(null)
 		} catch (err) {
-			toast.error(getErrorMessage(err, 'Failed to delete blog'))
+			toast.error(err.message || 'Failed to delete blog')
 		} finally {
 			setIsDeleting(false)
 		}
@@ -126,7 +110,7 @@ function BlogList({ refreshKey, onEdit }) {
 							>
 								{blog.coverImage ? (
 									<img
-										src={assetUrl(blog.coverImage)}
+										src={blog.coverImage}
 										alt={blog.title}
 										className="mb-4 h-40 w-full rounded-xl object-cover"
 									/>
@@ -228,12 +212,12 @@ function BlogList({ refreshKey, onEdit }) {
 					onCreated={() => {
 						setIsUploadOpen(false)
 						setEditItem(null)
-						loadBlogs()
+						refetch()
 					}}
 					onUpdated={() => {
 						setIsUploadOpen(false)
 						setEditItem(null)
-						loadBlogs()
+						refetch()
 					}}
 					onCancel={() => {
 						setIsUploadOpen(false)

@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import { Toaster } from 'react-hot-toast'
 
 function App() {
   const location = useLocation()
@@ -25,18 +24,6 @@ function App() {
         </main>
         <Footer />
       </div>
-      <Toaster 
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: '#0f172a',
-            color: '#f8fafc',
-            border: '1px solid rgba(51,65,85,0.5)',
-          },
-          success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-        }}
-      />
     </>
   )
 }

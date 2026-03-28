@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import api, { assetUrl } from "../lib/api";
+import { useWorks } from "../hooks/useWorks";
+import { useCategories } from "../hooks/useCategories";
 
 function WorkDetailsModal({ work, onClose }) {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -11,7 +12,7 @@ function WorkDetailsModal({ work, onClose }) {
       ? [work.imageURL, ...work.galleryImages]
       : [work.imageURL];
 
-  const parsedImages = images.map((img) => (img ? assetUrl(img) : ""));
+  const parsedImages = images.map((img) => img || "");
   const headline = work.headline || work.title || "Portfolio Image";
 
   useEffect(() => {
@@ -122,7 +123,7 @@ function WorkDetailsModal({ work, onClose }) {
 
 function WorkCard({ work, index, onClick }) {
   const [hovered, setHovered] = useState(false);
-  const src = assetUrl(work.imageURL);
+  const src = work.imageURL;
   const headline = work.headline || work.title || "Portfolio Image";
   const imageCount = (work.galleryImages?.length || 0) + 1;
 
@@ -168,30 +169,11 @@ function WorkCard({ work, index, onClick }) {
 
 function WorkPages() {
   const { category } = useParams();
-  const [works, setWorks] = useState([]);
-  const [categoryInfo, setCategoryInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { categories } = useCategories();
+  const { works, loading } = useWorks({ category });
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    api
-      .get("/api/categories")
-      .then(({ data }) => {
-        if (Array.isArray(data))
-          setCategoryInfo(data.find((c) => c.slug === category) || null);
-      })
-      .catch(() => {});
-  }, [category]);
-
-  useEffect(() => {
-    setLoading(true);
-    api
-      .get(`/api/works/${category}`)
-      .then(({ data }) => setWorks(Array.isArray(data) ? data : []))
-      .catch(() => setWorks([]))
-      .finally(() => setLoading(false));
-  }, [category]);
-
+  const categoryInfo = categories.find(c => c.slug === category) || null;
   const displayName = categoryInfo?.name || category;
   const displayDesc = categoryInfo?.description || "";
 
@@ -205,16 +187,22 @@ function WorkPages() {
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
-      <div className="px-6 pt-2">
-        <Link
-          to="/portfolio"
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-400 transition-colors duration-200"
-        >
-          ← Back to Portfolio
+      <nav
+        aria-label="Breadcrumb"
+        className="relative z-10 flex items-center gap-2 px-6 pt-4 mb-4 text-xs text-slate-500"
+      >
+        <Link to="/" className="transition-colors hover:text-violet-400">
+          Home
         </Link>
-      </div>
+        <span>›</span>
+        <Link to="/portfolio" className="transition-colors hover:text-violet-400">
+          Portfolio
+        </Link>
+        <span>›</span>
+        <span className="text-slate-400">{displayName}</span>
+      </nav>
 
-      <div className="max-w-[1600px] mx-auto px-6 mt-4">
+      <div className="max-w-[1600px] mx-auto px-6 pt-2">
         <div className="mb-10">
           <h1 className="text-4xl font-black text-slate-100 sm:text-5xl lg:text-6xl tracking-tight mb-2">
             {displayName}

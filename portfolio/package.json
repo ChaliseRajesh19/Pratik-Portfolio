@@ -14,11 +14,13 @@
     "@ckeditor/ckeditor5-react": "^8.0.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@supabase/supabase-js": "^2.100.1",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.6",
     "framer-motion": "^12.38.0",
     "gsap": "^3.14.2",
     "quill": "^2.0.3",
+    "quill-image-resize-module-react": "^3.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
@@ -27,7 +29,8 @@
     "react-router-dom": "^7.13.0",
     "reacticons": "^0.0.1",
     "tailwindcss": "^4.1.18",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

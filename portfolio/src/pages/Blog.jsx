@@ -1,28 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BlogCard from '../components/BlogCard'
-import api, { assetUrl, getErrorMessage } from '../lib/api'
+import { useBlogs } from '../hooks/useBlogs'
 
 export default function Blog({ withTopOffset = true }) {
-  const [blogs, setBlogs] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [activeTag, setActiveTag] = useState('all')
-
-  /* ── fetch ── */
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const { data } = await api.get('/api/blogs')
-        setBlogs(Array.isArray(data) ? data : [])
-      } catch (err) {
-        setError(getErrorMessage(err, 'Unable to load blogs'))
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchBlogs()
-  }, [])
+  const { blogs, loading: isLoading, error } = useBlogs({ onlyPublished: true })
+  const [activeTag, setActiveTag] = React.useState('all')
 
   /* ── tab title ── */
   useEffect(() => {
@@ -47,7 +30,6 @@ export default function Blog({ withTopOffset = true }) {
     return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   }
 
-  /* ── tag filter ── */
   const allTags = ['all', ...Array.from(new Set(blogs.flatMap(b => b.tags || [])))]
   const filtered = activeTag === 'all' ? blogs : blogs.filter(b => b.tags?.includes(activeTag))
 
@@ -185,7 +167,7 @@ export default function Blog({ withTopOffset = true }) {
                       category={blog.category}
                       featured={blog.featured}
                       tags={blog.tags}
-                      coverImage={assetUrl(blog.coverImage)}
+                      coverImage={blog.coverImage}
                     />
                   </motion.div>
                 ))
