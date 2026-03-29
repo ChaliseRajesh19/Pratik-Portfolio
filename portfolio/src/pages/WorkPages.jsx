@@ -67,7 +67,7 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {parsedImages.map((src, idx) => (
+            {!work.videoURL && parsedImages.map((src, idx) => (
               <div
                 key={idx}
                 className="group relative rounded-2xl overflow-hidden bg-slate-900 aspect-square cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-300 shadow-lg"
@@ -223,6 +223,15 @@ function WorkCard({ work, index, onClick }) {
             style={{ transform: hovered ? "scale(1.04)" : "scale(1)" }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-85" />
+          
+          {work.videoURL && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+          )}
+
           <div className="absolute top-4 left-4 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-100 backdrop-blur-md">
             {work.category}
           </div>
@@ -233,7 +242,7 @@ function WorkCard({ work, index, onClick }) {
               </h3>
             ) : null}
             <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-300">
-              {imageCount} Image{imageCount > 1 ? "s" : ""}
+              {work.videoURL ? "1 Video" : `${imageCount} Image${imageCount > 1 ? "s" : ""}`}
             </p>
           </div>
         </div>
