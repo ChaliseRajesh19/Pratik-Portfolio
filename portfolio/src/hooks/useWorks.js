@@ -13,6 +13,7 @@ function formatWork(row) {
         headline: row.headline,
         category: row.category,
         imageURL: row.image_url,
+        videoURL: row.video_url || '',
         previewImage: row.preview_image || '',
         galleryImages: row.gallery_images || [],
         createdAt: row.created_at,
@@ -47,7 +48,7 @@ export function useWorks({ category } = {}) {
 
     useEffect(() => { fetchWorks(); }, [fetchWorks]);
 
-    const createWork = useCallback(async ({ headline, category: cat, mainImage, galleryImages = [] }) => {
+    const createWork = useCallback(async ({ headline, category: cat, mainImage, galleryImages = [], videoUrl = '' }) => {
         if (!mainImage) throw new Error('Main image is required');
 
         const imageURL = await uploadFile(mainImage, BUCKET, 'works');
@@ -60,6 +61,7 @@ export function useWorks({ category } = {}) {
             headline,
             category: cat,
             image_url: imageURL,
+            video_url: videoUrl,
             gallery_images: galleryURLs,
         }]).select().single();
 
@@ -69,13 +71,17 @@ export function useWorks({ category } = {}) {
         return formatted;
     }, []);
 
-    const updateWork = useCallback(async (id, { headline, category: cat, mainImage, newGalleryImages = [], existingGalleryImages = [] }) => {
+    const updateWork = useCallback(async (id, { headline, category: cat, mainImage, newGalleryImages = [], existingGalleryImages = [], videoUrl }) => {
         const updateData = {
             title: headline,
             headline,
             category: cat,
             updated_at: new Date().toISOString(),
         };
+
+        if (videoUrl !== undefined) {
+             updateData.video_url = videoUrl;
+        }
 
         if (mainImage) {
             updateData.image_url = await uploadFile(mainImage, BUCKET, 'works');

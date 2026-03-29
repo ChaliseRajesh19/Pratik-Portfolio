@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useWorks } from "../hooks/useWorks";
 import { useCategories } from "../hooks/useCategories";
 
-function WorkDetailsModal({ work, onClose }) {
-  const [selectedImage, setSelectedImage] = useState(null);
+function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
+  const [selectedMedia, setSelectedMedia] = useState(null); // { type: 'image' | 'video', url }
 
   const images =
     work.galleryImages && work.galleryImages.length > 0
@@ -15,14 +15,24 @@ function WorkDetailsModal({ work, onClose }) {
   const parsedImages = images.map((img) => img || "");
   const headline = work.headline || work.title || "Portfolio Image";
 
+  // Helper to convert YT/Vimeo to embed
+  const getEmbedUrl = (url) => {
+    if (!url) return "";
+    let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
+    match = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/);
+    if (match) return `https://player.vimeo.com/video/${match[1]}?autoplay=1`;
+    return url;
+  };
+
   useEffect(() => {
     const h = (e) => {
-      if (e.key === "Escape" && !selectedImage) onClose();
-      if (e.key === "Escape" && selectedImage) setSelectedImage(null);
+      if (e.key === "Escape" && !selectedMedia) onClose();
+      if (e.key === "Escape" && selectedMedia) setSelectedMedia(null);
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [onClose, selectedImage]);
+  }, [onClose, selectedMedia]);
 
   return (
     <AnimatePresence>
@@ -33,12 +43,16 @@ function WorkDetailsModal({ work, onClose }) {
         className="fixed inset-0 z-[999] bg-[#0d131f] flex flex-col"
       >
         <div className="max-w-6xl w-full mx-auto px-4 py-8 md:py-12 md:px-8 flex-1 text-left relative overflow-y-auto">
-          <button
-            onClick={onClose}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-cyan-400 transition-colors duration-200 mb-10"
-          >
-            ← Back to Images
-          </button>
+          {/* Breadcrumbs */}
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-10 text-xs text-slate-500 font-medium">
+            <button onClick={onClose} className="transition-colors hover:text-cyan-400">Home</button>
+            <span className="opacity-50">›</span>
+            <button onClick={onClose} className="transition-colors hover:text-cyan-400">Portfolio</button>
+            <span className="opacity-50">›</span>
+            <button onClick={onClose} className="transition-colors hover:text-cyan-400">{categoryDisplayName}</button>
+            <span className="opacity-50">›</span>
+            <span className="text-slate-300 truncate max-w-[150px] sm:max-w-[300px]">{headline}</span>
+          </nav>
 
           <div className="mb-8">
             <div className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold tracking-widest uppercase mb-4">
@@ -57,7 +71,7 @@ function WorkDetailsModal({ work, onClose }) {
               <div
                 key={idx}
                 className="group relative rounded-2xl overflow-hidden bg-slate-900 aspect-square cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-300 shadow-lg"
-                onClick={() => setSelectedImage(src)}
+                onClick={() => setSelectedMedia({ type: 'image', url: src })}
               >
                 <img
                   src={src}
@@ -73,44 +87,105 @@ function WorkDetailsModal({ work, onClose }) {
                 </div>
               </div>
             ))}
+
+            {/* Video Tile placed at the end */}
+            {work.videoURL && (
+              <div
+                className="group relative rounded-2xl overflow-hidden bg-slate-900 aspect-square cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+                onClick={() => setSelectedMedia({ type: 'video', url: work.videoURL })}
+              >
+                {/* Use the main image as a background thumbnail with a strong overlay */}
+                {parsedImages[0] && (
+                  <img src={parsedImages[0]} alt="Video Thumbnail" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-300" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-xl group-hover:scale-110 transition-transform duration-300 ease-out">
+                    <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+                <div className="absolute bottom-5 left-5 right-5 z-10">
+                  <span className="text-white font-bold tracking-wide text-sm drop-shadow-md">Short Video</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <AnimatePresence>
-          {selectedImage && (
+          {selectedMedia && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedImage(null)}
-              className="fixed inset-0 z-[1000] bg-[#0d131f]/95 backdrop-blur-xl flex flex-col p-4 md:p-8"
-              style={{ paddingBottom: parsedImages.length > 1 ? "120px" : "32px" }}
+              onClick={() => setSelectedMedia(null)}
+              className="fixed inset-0 z-[1000] flex flex-col p-4 md:p-8 overflow-hidden bg-[#0d131f]/80"
             >
+              {/* Dynamic Blurred Glass Backdrop */}
+              {parsedImages[0] && (
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                  <img src={parsedImages[0]} alt="backdrop" className="w-full h-full object-cover opacity-40 blur-[80px] scale-125 saturate-[1.5]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent"></div>
+                </div>
+              )}
+
+              {/* Context Header */}
+              <div className="relative z-10 w-full max-w-7xl mx-auto pointer-events-auto mt-2 px-2 md:px-8">
+                <nav aria-label="Lightbox Breadcrumb" className="flex items-center gap-2 text-xs text-slate-400">
+                  <Link to="/" onClick={onClose} className="transition-colors hover:text-violet-400">Home</Link>
+                  <span>›</span>
+                  <Link to="/portfolio" onClick={onClose} className="transition-colors hover:text-violet-400">Portfolio</Link>
+                  <span>›</span>
+                  <button onClick={() => setSelectedMedia(null)} className="transition-colors hover:text-violet-400">{categoryDisplayName}</button>
+                  <span>›</span>
+                  <span className="text-slate-200 truncate max-w-[120px] sm:max-w-[300px]">{headline}</span>
+                </nav>
+              </div>
+
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedImage(null);
+                  setSelectedMedia(null);
                 }}
-                className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors z-[1010]"
+                className="absolute top-6 right-6 md:top-8 md:right-8 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 hover:scale-105 transition-all z-[1010] backdrop-blur-md border border-white/10"
               >
-                ×
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
 
               <div
-                className="flex-1 min-h-0 relative flex items-center justify-center w-full max-w-7xl mx-auto px-12"
+                className="flex-1 min-h-0 relative flex items-center justify-center w-full max-w-7xl mx-auto px-4 md:px-12"
                 onClick={(e) => e.stopPropagation()}
               >
                 <AnimatePresence mode="wait">
-                  <motion.img
-                    key={selectedImage}
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    src={selectedImage}
-                    alt="Fullscreen View"
-                    className="max-w-full max-h-full object-contain drop-shadow-2xl"
-                  />
+                  {selectedMedia.type === 'video' ? (
+                    <motion.div
+                      key={selectedMedia.url}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="h-[80vh] min-h-[400px] max-h-full max-w-full aspect-[9/16] rounded-[24px] overflow-hidden shadow-[0_0_80px_-15px_rgba(168,85,247,0.3)] bg-black shrink-0 relative"
+                    >
+                      <iframe 
+                        src={getEmbedUrl(selectedMedia.url)} 
+                        className="w-full h-full"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </motion.div>
+                  ) : (
+                    <motion.img
+                      key={selectedMedia.url}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      src={selectedMedia.url}
+                      alt="Fullscreen View"
+                      className="max-w-full max-h-full object-contain drop-shadow-2xl"
+                    />
+                  )}
                 </AnimatePresence>
               </div>
             </motion.div>
@@ -259,7 +334,7 @@ function WorkPages() {
       </div>
 
       {selected && (
-        <WorkDetailsModal work={selected} onClose={() => setSelected(null)} />
+        <WorkDetailsModal work={selected} categoryDisplayName={displayName} onClose={() => setSelected(null)} />
       )}
     </div>
   );

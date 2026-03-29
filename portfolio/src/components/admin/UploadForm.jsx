@@ -10,6 +10,7 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
   const [galleryImages, setGalleryImages] = React.useState([]);
   const [existingGalleryImages, setExistingGalleryImages] = React.useState([]);
   const [previewImageUrl, setPreviewImageUrl] = React.useState("");
+  const [videoUrl, setVideoUrl] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -18,6 +19,7 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
       setCategory(initialWork.category || categories[0] || "");
       setExistingGalleryImages(initialWork.galleryImages || []);
       setPreviewImageUrl(initialWork.imageURL || "");
+      setVideoUrl(initialWork.videoURL || "");
     } else if (defaultCategory && !category) {
       setCategory(defaultCategory);
     }
@@ -37,14 +39,15 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
           mainImage: previewImage || null,
           newGalleryImages: galleryImages,
           existingGalleryImages,
+          videoUrl: videoUrl.trim(),
         });
         toast.success(`Updated images in ${category} successfully.`);
       } else {
-        await createWork({ headline: headline.trim(), category, mainImage: previewImage, galleryImages });
+        await createWork({ headline: headline.trim(), category, mainImage: previewImage, galleryImages, videoUrl: videoUrl.trim() });
         toast.success(`Uploaded images to ${category} successfully.`);
       }
 
-      setHeadline(""); setPreviewImage(null); setPreviewImageUrl(""); setGalleryImages([]); setExistingGalleryImages([]);
+      setHeadline(""); setPreviewImage(null); setPreviewImageUrl(""); setGalleryImages([]); setExistingGalleryImages([]); setVideoUrl("");
       if (onUploaded) onUploaded(category);
     } catch (err) {
       toast.error(err.message || "Upload failed");
@@ -72,6 +75,14 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
           <input type="text" value={headline} onChange={(e) => setHeadline(e.target.value)}
             placeholder="Optional short headline for this image set"
             className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring placeholder:text-slate-500" />
+        </label>
+
+        <label className="block text-sm font-medium text-slate-300">
+          Video Link (YouTube)
+          <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="e.g. https://youtube.com/shorts/xxxxx"
+            className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-purple-400/50 transition focus:border-purple-400/70 focus:ring placeholder:text-slate-500" />
+          <p className="mt-2 text-[11px] text-slate-500 italic">Optional video link. Will appear as the last item in the gallery grid.</p>
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
