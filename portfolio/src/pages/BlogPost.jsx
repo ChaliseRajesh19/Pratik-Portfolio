@@ -493,33 +493,6 @@ export default function BlogPost() {
           margin: 1.5rem auto;
           display: block;
         }
-        .blog-prose img[data-placement='left'] {
-          float: left;
-          display: inline;
-          max-width: min(48%, 320px);
-          margin: 0 1rem 1rem 0;
-        }
-        .blog-prose img[data-placement='center'] {
-          float: none;
-          display: block;
-          max-width: 100%;
-          margin: 1.5rem auto;
-        }
-        .blog-prose img[data-placement='right'] {
-          float: right;
-          display: inline;
-          max-width: min(48%, 320px);
-          margin: 0 0 1rem 1rem;
-        }
-        @media (max-width: 640px) {
-          .blog-prose img[data-placement='left'],
-          .blog-prose img[data-placement='right'] {
-            float: none;
-            display: block;
-            max-width: 100%;
-            margin: 1rem auto;
-          }
-        }
       `}</style>
     </>
   );

@@ -28,6 +28,16 @@ if (Quill.imports?.['attributors/style/lineheight'] !== LineHeightStyle) {
 	Quill.register(LineHeightStyle, true)
 }
 
+const WidthStyle = new Parchment.Attributor.Style('width', 'width', {
+	scope: Parchment.Scope.INLINE,
+})
+const HeightStyle = new Parchment.Attributor.Style('height', 'height', {
+	scope: Parchment.Scope.INLINE,
+})
+
+Quill.register(WidthStyle, true)
+Quill.register(HeightStyle, true)
+
 const TOOLBAR_OPTIONS = [
 	[{ header: [1, 2, 3, 4, 5, 6, false] }],
 	[{ font: [] }, { size: ['small', false, 'large', 'huge'] }, { lineheight: ['1', '1.15', '1.5', '1.75', '2', '2.5'] }],
@@ -62,6 +72,8 @@ const FORMATS = [
 	'link',
 	'image',
 	'video',
+	'width',
+	'height',
 ]
 
 function normalizeMediaUrl(value) {
@@ -74,13 +86,10 @@ function normalizeMediaUrl(value) {
 
 function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }) {
 	const [linkModal, setLinkModal] = useState({ isOpen: false, url: '', text: '', range: null, quill: null })
-	const [imageToolbar, setImageToolbar] = useState({ isOpen: false, top: 0, left: 0 })
 	const fileInputRef = useRef(null)
 	const editorShellRef = useRef(null)
-	const imageToolbarRef = useRef(null)
 	const quillInstanceRef = useRef(null)
 	const reactQuillRef = useRef(null)
-	const selectedImageRef = useRef(null)
 
 	const openLinkModal = useCallback((quill) => {
 		const range = quill.getSelection(true)
@@ -153,79 +162,11 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 		}
 	}
 
-	const closeImageToolbar = useCallback(() => {
-		selectedImageRef.current = null
-		setImageToolbar({ isOpen: false, top: 0, left: 0 })
-	}, [])
-
-	const positionImageToolbar = useCallback((img) => {
-		const shell = editorShellRef.current
-		if (!shell || !img) return
-
-		const shellRect = shell.getBoundingClientRect()
-		const imgRect = img.getBoundingClientRect()
-		const toolbarWidth = 220
-		const top = imgRect.top - shellRect.top + shell.scrollTop - 52
-		const rawLeft = imgRect.left - shellRect.left + shell.scrollLeft
-		const left = Math.min(Math.max(rawLeft, 12), Math.max(12, shell.clientWidth - toolbarWidth - 12))
-
-		setImageToolbar({
-			isOpen: true,
-			top: Math.max(12, top),
-			left,
-		})
-	}, [])
-
-	const showImageToolbar = useCallback(
-		(img) => {
-			selectedImageRef.current = img
-			positionImageToolbar(img)
-		},
-		[positionImageToolbar]
-	)
-
-	const applyImagePlacement = useCallback(
-		(mode) => {
-			const img = selectedImageRef.current
-			const quill = quillInstanceRef.current
-			if (!img || !quill) return
-
-			img.setAttribute('data-placement', mode)
-			img.style.height = 'auto'
-
-			if (mode === 'left') {
-				img.style.float = 'left'
-				img.style.display = 'inline'
-				img.style.margin = '0 1rem 1rem 0'
-			}
-
-			if (mode === 'center') {
-				img.style.float = 'none'
-				img.style.display = 'block'
-				img.style.margin = '1.25rem auto'
-			}
-
-			if (mode === 'right') {
-				img.style.float = 'right'
-				img.style.display = 'inline'
-				img.style.margin = '0 0 1rem 1rem'
-			}
-
-			onChange(quill.root.innerHTML)
-			requestAnimationFrame(() => positionImageToolbar(img))
-		},
-		[onChange, positionImageToolbar]
-	)
-
 	const handleEditorChange = useCallback(
 		(content) => {
 			onChange(content)
-
-			if (selectedImageRef.current) {
-				requestAnimationFrame(() => positionImageToolbar(selectedImageRef.current))
-			}
 		},
-		[onChange, positionImageToolbar]
+		[onChange]
 	)
 
 	useEffect(() => {
@@ -233,54 +174,7 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 		if (!quill) return
 
 		quillInstanceRef.current = quill
-
-		const handleEditorClick = (e) => {
-			const target = e.target
-			if (target instanceof HTMLImageElement) {
-				showImageToolbar(target)
-				return
-			}
-
-			if (!imageToolbarRef.current?.contains(target)) {
-				closeImageToolbar()
-			}
-		}
-
-		quill.root.addEventListener('click', handleEditorClick)
-		return () => quill.root.removeEventListener('click', handleEditorClick)
-	}, [closeImageToolbar, showImageToolbar])
-
-	useEffect(() => {
-		if (!imageToolbar.isOpen) return
-
-		const handlePointerDown = (e) => {
-			const target = e.target
-			if (
-				imageToolbarRef.current?.contains(target) ||
-				(target instanceof HTMLImageElement && target === selectedImageRef.current)
-			) {
-				return
-			}
-
-			if (!editorShellRef.current?.contains(target)) {
-				closeImageToolbar()
-			}
-		}
-
-		const handleViewportChange = () => {
-			if (selectedImageRef.current) {
-				positionImageToolbar(selectedImageRef.current)
-			}
-		}
-
-		document.addEventListener('mousedown', handlePointerDown)
-		window.addEventListener('resize', handleViewportChange)
-
-		return () => {
-			document.removeEventListener('mousedown', handlePointerDown)
-			window.removeEventListener('resize', handleViewportChange)
-		}
-	}, [closeImageToolbar, imageToolbar.isOpen, positionImageToolbar])
+	}, [])
 
 	const modules = useMemo(
 		() => ({
@@ -301,7 +195,7 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 			},
 			imageResize: {
 				parchment: Quill.import('parchment'),
-				modules: ['Resize', 'DisplaySize']
+				modules: ['Resize']
 			}
 		}),
 		[openLinkModal]
@@ -319,36 +213,6 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 				formats={FORMATS}
 			/>
 
-			{imageToolbar.isOpen && (
-				<div
-					ref={imageToolbarRef}
-					className="absolute z-40 flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-950/95 px-3 py-2 shadow-[0_12px_30px_rgba(2,6,23,0.45)] backdrop-blur"
-					style={{ top: `${imageToolbar.top}px`, left: `${imageToolbar.left}px` }}
-				>
-					<button
-						type="button"
-						onClick={() => applyImagePlacement('left')}
-						className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 transition-colors hover:bg-slate-800 hover:text-cyan-300"
-					>
-						Left
-					</button>
-					<button
-						type="button"
-						onClick={() => applyImagePlacement('center')}
-						className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 transition-colors hover:bg-slate-800 hover:text-cyan-300"
-					>
-						Center
-					</button>
-					<button
-						type="button"
-						onClick={() => applyImagePlacement('right')}
-						className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 transition-colors hover:bg-slate-800 hover:text-cyan-300"
-					>
-						Right
-					</button>
-				</div>
-			)}
-
 			{/* Hidden file input for image uploads */}
 			<input
 				type="file"
@@ -357,10 +221,6 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 				style={{ display: 'none' }}
 				onChange={handleImageUpload}
 			/>
-
-			<p className="border-t border-slate-800/80 px-4 py-2 text-[11px] text-slate-500">
-				Select an image to place it left, center, or right. Resize it first if you want text to wrap beside it.
-			</p>
 
 			{/* Custom Link Modal Dialog */}
 			{linkModal.isOpen && (
