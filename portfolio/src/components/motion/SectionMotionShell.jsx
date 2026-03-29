@@ -33,6 +33,7 @@ export function SectionMotionShell({
   className = "",
   variant = "blue",
   ghostLabel = "",
+  id,
 }) {
   const ref = useRef(null);
   const palette = PALETTES[variant] || PALETTES.blue;
@@ -51,7 +52,7 @@ export function SectionMotionShell({
   const beamScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.35, 1, 0.45]);
 
   return (
-    <section ref={ref} className={`relative isolate overflow-hidden ${className}`}>
+    <section id={id} ref={ref} className={`relative isolate overflow-hidden ${className}`}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(2,6,23,1))]" />
 
       <motion.div

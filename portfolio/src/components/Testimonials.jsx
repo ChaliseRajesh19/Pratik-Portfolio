@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { motion, useScroll, useVelocity, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion'
+import { useRef } from 'react'
 import { SectionHeader } from './SectionHeader'
 import { SectionMotionShell } from './motion/SectionMotionShell'
 import { useTestimonials } from '../hooks/useTestimonials'
@@ -53,20 +53,15 @@ function Avatar({ avatarUrl, name }) {
 }
 
 /* ─── Single card — animated by scroll direction ─────────── */
-function TestimonialCard({ t, index, scrollDir }) {
-  /* 
-   * scrollDir: 'down' → cards slide in from right (left-to-right reveal)
-   *            'up'   → cards slide in from left  (right-to-left reveal)
-   */
-  const xStart = scrollDir === 'up' ? -60 : 60
+function TestimonialCard({ t, index }) {
   const delay = index * 0.06
 
   return (
     <motion.div
-      key={`${t.id}-${scrollDir}`}
-      initial={{ opacity: 0, x: xStart, scale: 0.94 }}
+      key={t.id}
+      initial={{ opacity: 0, x: 40, scale: 0.94 }}
       whileInView={{ opacity: 1, x: 0, scale: 1 }}
-      viewport={{ once: false, amount: 0.15 }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{
         duration: 0.55,
         delay,
@@ -122,24 +117,49 @@ function SkeletonCard() {
   )
 }
 
+/* ─── Utility to wrap values seamlessly for infinite marquee ─ */
+function wrap(min, max, v) {
+  const rangeSize = max - min;
+  return ((((v - min) % rangeSize) + rangeSize) % rangeSize) + min;
+}
+
 /* ─── Infinite-marquee row — direction flips with scroll ─── */
-function MarqueeRow({ items, marqueDir = 1, scrollDir, speed = 40 }) {
+function MarqueeRow({ items, marqueDir = 1, speed = 40 }) {
   const doubled = [...items, ...items]
+  
+  const baseX = useMotionValue(0)
+  
+  // Track scroll direction using velocity (1 for down, -1 for up)
+  const { scrollY } = useScroll()
+  const scrollVelocity = useVelocity(scrollY)
+  const scrollDir = useRef(1) 
+
+  // Base speed: 50% / duration (speed). marqueDir 1 moves left (negative x).
+  const baseVelocity = -(50 / speed) * marqueDir
+
+  useAnimationFrame((t, delta) => {
+    const vel = scrollVelocity.get()
+    if (vel > 0) scrollDir.current = 1
+    else if (vel < 0) scrollDir.current = -1
+
+    const moveBy = baseVelocity * scrollDir.current * (delta / 1000)
+    baseX.set(baseX.get() + moveBy)
+  })
+
+  // Wrap around exactly at 0% and -50% to create perfect infinite loop
+  const x = useTransform(baseX, (v) => `${wrap(-50, 0, v)}%`)
+
   return (
     <div className="overflow-hidden py-2">
       <motion.div
         className="flex"
-        animate={{
-          x: marqueDir > 0 ? ['0%', '-50%'] : ['-50%', '0%'],
-        }}
-        transition={{ duration: speed, ease: 'linear', repeat: Infinity }}
+        style={{ x }}
       >
         {doubled.map((t, i) => (
           <TestimonialCard
             key={`${t.id}-${i}`}
             t={t}
             index={i % items.length}
-            scrollDir={scrollDir}
           />
         ))}
       </motion.div>
@@ -160,17 +180,6 @@ function SkeletonRow({ count = 4 }) {
 export default function Testimonials() {
   const { testimonials, loading } = useTestimonials()
 
-  /* Track scroll direction */
-  const sectionRef = useRef(null)
-  const [scrollDir, setScrollDir] = useState('down')
-
-  const { scrollY } = useScroll()
-  useMotionValueEvent(scrollY, 'change', (current) => {
-    const prev = scrollY.getPrevious()
-    if (current > prev) setScrollDir('down')
-    else if (current < prev) setScrollDir('up')
-  })
-
   /* Split into two rows */
   const half = Math.ceil(testimonials.length / 2)
   const row1 = testimonials.slice(0, half)
@@ -179,6 +188,7 @@ export default function Testimonials() {
 
   return (
     <SectionMotionShell
+      id="testimonials"
       variant="violet"
       ghostLabel="testimonials"
       className="py-24 md:py-32 scroll-mt-24"
@@ -193,7 +203,7 @@ export default function Testimonials() {
       </div>
 
       {/* ── Marquee content ─────────────────────────────── */}
-      <div ref={sectionRef} className="relative z-10 space-y-4">
+      <div className="relative z-10 space-y-4">
         {loading ? (
           <>
             <SkeletonRow count={4} />
@@ -207,7 +217,6 @@ export default function Testimonials() {
             <MarqueeRow
               items={row1.length >= 2 ? row1 : testimonials}
               marqueDir={1}
-              scrollDir={scrollDir}
               speed={38}
             />
             {/* Row 2 → always scrolls right */}
@@ -215,7 +224,6 @@ export default function Testimonials() {
               <MarqueeRow
                 items={row2}
                 marqueDir={-1}
-                scrollDir={scrollDir}
                 speed={44}
               />
             )}
@@ -224,7 +232,7 @@ export default function Testimonials() {
           /* Fallback for <2 items */
           <div className="flex justify-center gap-4 flex-wrap px-4">
             {testimonials.map((t, i) => (
-              <TestimonialCard key={t.id} t={t} index={i} scrollDir={scrollDir} />
+              <TestimonialCard key={t.id} t={t} index={i} />
             ))}
           </div>
         )}

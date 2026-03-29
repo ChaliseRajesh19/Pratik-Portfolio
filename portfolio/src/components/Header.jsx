@@ -27,6 +27,7 @@ function HamburgerIcon({ open }) {
         className="absolute top-1/2 -translate-y-1/2 right-0 w-full h-[2px] bg-slate-200 rounded-full origin-center"
         transition={{ duration: 0.2, ease: "easeOut" }}
       />
+
       <motion.span
         animate={open ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
         className="absolute bottom-0 right-0 w-full h-[2px] bg-slate-200 rounded-full origin-center"
@@ -40,13 +41,11 @@ function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isHomeRoute = location.pathname === "/";
-  const sectionIds = useMemo(
-    () =>
-      NAV_ITEMS.filter((n) => n.hash.startsWith("#")).map((n) =>
-        n.hash.slice(1)
-      ),
-    []
-  );
+  const sectionIds = useMemo(() => {
+    const ids = NAV_ITEMS.filter((n) => n.hash.startsWith("#")).map((n) => n.hash.slice(1));
+    ids.push("testimonials");
+    return ids;
+  }, []);
 
   const [activeHash, setActiveHash] = useState("#home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -77,7 +76,8 @@ function Header() {
 
       const sections = sectionIds
         .map((id) => document.getElementById(id))
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort((a, b) => a.offsetTop - b.offsetTop);
 
       let currentActive = null;
       for (let i = sections.length - 1; i >= 0; i--) {
