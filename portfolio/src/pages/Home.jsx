@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useSEO } from "../hooks/useSEO";
 import About from "./About";
 import Service from "./Service";
 import Portfolio from "./Portfolio";
@@ -30,6 +31,39 @@ const fadeUp = {
 function Home() {
   const headlineWords = ["Hi There,", "I am", "Pratik", "Bhusal"];
   const location = useLocation();
+
+  useSEO({
+    title: 'Pratik Bhusal — Creative Graphic Designer & Video Editor',
+    description: 'Pratik Bhusal is a Graphic Designer and Video Editor with 3+ years of experience delivering brand identities, social media visuals, motion content, and pixel-perfect design.',
+    canonicalPath: '/',
+    ogType: 'website',
+    keywords: ['graphic designer', 'video editor', 'branding', 'logo design', 'Nepal', 'creative designer', 'Pratik Bhusal'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Person',
+          name: 'Pratik Bhusal',
+          url: 'https://creativepratik.com',
+          jobTitle: 'Graphic Designer & Video Editor',
+          sameAs: [
+            'https://linkedin.com/in/creativepratik22/',
+            'https://twitter.com/creativepratik_',
+            'https://instagram.com/creativepratik22',
+            'https://facebook.com/creativepratik22',
+          ],
+          address: { '@type': 'PostalAddress', addressCountry: 'NP' },
+          email: 'mail@creativepratik.com',
+        },
+        {
+          '@type': 'WebSite',
+          name: 'Pratik Bhusal Portfolio',
+          url: 'https://creativepratik.com',
+          description: 'Portfolio of Pratik Bhusal — Creative Graphic Designer & Video Editor',
+        },
+      ],
+    },
+  });
 
   useEffect(() => {
     if (location.state?.scrollTo) {

@@ -5,6 +5,7 @@ import { SectionHeader } from "../components/SectionHeader";
 import { GridConnections } from "../components/GridConnections";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
 import { useServices } from "../hooks/useServices";
+import { useSEO } from "../hooks/useSEO";
 
 const marqueeItems = [
   "brand identity",
@@ -18,6 +19,33 @@ const marqueeItems = [
 function Service({ withTopOffset = true }) {
   const { services, loading } = useServices()
   const stageRef = useRef(null);
+
+  useSEO({
+    title: 'Services — Graphic Design & Video Editing',
+    description: 'Explore Pratik Bhusal’s services: Logo Design, Brand Identity, Social Media Creatives, Video Editing, Motion Graphics, and Campaign Design. Professional creative solutions.',
+    canonicalPath: '/service',
+    keywords: ['logo design', 'brand identity', 'video editing', 'social media design', 'motion graphics', 'campaign design', 'graphic design services Nepal'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      provider: {
+        '@type': 'Person',
+        name: 'Pratik Bhusal',
+        url: 'https://creativepratik.com',
+      },
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'Creative Services',
+        itemListElement: [
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Logo Design' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Brand Identity' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Social Media Design' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Video Editing' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Motion Graphics' } },
+        ],
+      },
+    },
+  });
 
   const { scrollYProgress } = useScroll({
     target: stageRef,

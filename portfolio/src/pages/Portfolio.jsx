@@ -5,6 +5,7 @@ import ProjectCards3D from "../components/three/ProjectCards3D";
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
 import { useCategories } from "../hooks/useCategories";
+import { useSEO } from "../hooks/useSEO";
 
 const marqueeItems = [
   "selected work",
@@ -17,6 +18,20 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
   const location = useLocation();
   const containerClass = withTopOffset ? "min-h-screen mt-16" : "mt-0";
   const isStandalonePage = location.pathname === "/portfolio" && limit === null;
+
+  useSEO({
+    title: 'Portfolio — Creative Works by Pratik Bhusal',
+    description: 'Explore the portfolio of Pratik Bhusal, featuring selected works in Brand Identity, Social Media Design, Video Editing, and Motion Graphics.',
+    canonicalPath: '/portfolio',
+    keywords: ['design portfolio', 'graphic design works', 'video editing portfolio', 'brand identity examples', 'creative direction', 'Pratik Bhusal portfolio'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Portfolio of Pratik Bhusal',
+      url: 'https://creativepratik.com/portfolio',
+      description: 'Selected graphics and video editing works by Pratik Bhusal.',
+    },
+  });
 
   const [works, setWorks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);

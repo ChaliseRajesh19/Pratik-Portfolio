@@ -2,16 +2,29 @@ import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BlogCard from '../components/BlogCard'
 import { useBlogs } from '../hooks/useBlogs'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Blog({ withTopOffset = true }) {
   const { blogs, loading: isLoading, error } = useBlogs({ onlyPublished: true })
   const [activeTag, setActiveTag] = React.useState('all')
 
-  /* ── tab title ── */
-  useEffect(() => {
-    document.title = 'Blog | Pratik'
-    return () => { document.title = 'Pratik Bhusal — Creative Designer' }
-  }, [])
+  useSEO({
+    title: 'Design Insights & Blog — Pratik Bhusal',
+    description: 'Expert tips, trends, and tutorials on graphic design, video editing, branding, and motion graphics by Pratik Bhusal.',
+    canonicalPath: '/blogs',
+    keywords: ['design blog', 'video editing tips', 'branding tutorials', 'motion graphics blog', 'creative insights', 'Pratik Bhusal blog'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: 'Design Insights & Blog — Pratik Bhusal',
+      url: 'https://creativepratik.com/blogs',
+      description: 'Expert tips, trends, and tutorials to help you master design and grow your creative career.',
+      publisher: {
+        '@type': 'Person',
+        name: 'Pratik Bhusal',
+      },
+    },
+  });
 
   /* ── helpers ── */
   const stripHtml = (v = '') => v.replace(/<[^>]+>/g, ' ')
@@ -44,7 +57,7 @@ export default function Blog({ withTopOffset = true }) {
         />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pb-24">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pb-24">
 
         {/* ════════════════════════════════
             HERO — centred
@@ -53,13 +66,13 @@ export default function Blog({ withTopOffset = true }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center pt-12 pb-10"
+          className="text-center pt-10 sm:pt-12 pb-8 sm:pb-10"
         >
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
-            className="text-4xl sm:text-5xl font-black tracking-tight text-white"
+            className="text-3xl sm:text-5xl font-black tracking-tight text-white"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
             Design{' '}
@@ -88,21 +101,23 @@ export default function Blog({ withTopOffset = true }) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-wrap justify-center gap-2 mt-6"
+              className="mt-6 -mx-4 sm:mx-0"
             >
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => setActiveTag(tag)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.12em] border transition-all duration-200 ${
-                    activeTag === tag
-                      ? 'bg-violet-600 border-violet-500 text-white'
-                      : 'bg-white/5 border-white/10 text-slate-400 hover:border-slate-600 hover:text-slate-200'
-                  }`}
-                >
-                  {tag === 'all' ? 'All' : tag}
-                </button>
-              ))}
+              <div className="flex items-center gap-2 px-4 sm:px-0 sm:flex-wrap sm:justify-center overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+                {allTags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveTag(tag)}
+                    className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.12em] border transition-all duration-200 ${
+                      activeTag === tag
+                        ? 'bg-violet-600 border-violet-500 text-white'
+                        : 'bg-white/5 border-white/10 text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                    }`}
+                  >
+                    {tag === 'all' ? 'All' : tag}
+                  </button>
+                ))}
+              </div>
             </motion.div>
           )}
         </motion.div>
@@ -111,13 +126,13 @@ export default function Blog({ withTopOffset = true }) {
             LOADING STATE
         ════════════════════════════════ */}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {[0, 1, 2, 3].map(i => (
               <motion.div
                 key={i}
                 animate={{ opacity: [0.4, 0.7, 0.4] }}
                 transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.15 }}
-                className="h-72 rounded-2xl bg-slate-800/50 border border-slate-700/40"
+                className="h-64 sm:h-72 rounded-2xl bg-slate-800/50 border border-slate-700/40"
               />
             ))}
           </div>
@@ -143,7 +158,7 @@ export default function Blog({ withTopOffset = true }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
             >
               {filtered.length === 0 ? (
                 <p className="col-span-2 text-center py-20 text-slate-500 text-sm">

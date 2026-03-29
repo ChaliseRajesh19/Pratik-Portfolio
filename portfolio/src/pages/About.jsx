@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ProfileImage from "../assets/Profile.png";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
+import { useSEO } from "../hooks/useSEO";
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -71,6 +72,27 @@ function ScrollRevealTextContainer({ paragraphs }) {
 
 function About({ withTopOffset = true }) {
   const stageRef = useRef(null);
+
+  useSEO({
+    title: 'About Pratik Bhusal — Designer & Video Editor',
+    description: 'Learn about Pratik Bhusal, a Graphic Designer and Video Editor with 3+ years of experience in branding, motion, and visual identity. Based in Kapilvastu, Nepal.',
+    canonicalPath: '/about',
+    keywords: ['about Pratik Bhusal', 'graphic designer Nepal', 'video editor Nepal', 'brand identity designer', 'creative portfolio Nepal'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'AboutPage',
+      name: 'About Pratik Bhusal',
+      url: 'https://creativepratik.com/about',
+      description: 'Graphic Designer and Video Editor with 3+ years of experience.',
+      mainEntity: {
+        '@type': 'Person',
+        name: 'Pratik Bhusal',
+        jobTitle: 'Graphic Designer & Video Editor',
+        address: { '@type': 'PostalAddress', addressLocality: 'Kapilvastu', addressCountry: 'NP' },
+        email: 'mail@creativepratik.com',
+      },
+    },
+  });
 
   const sectionClassName = `min-h-screen px-4 py-10 md:py-24 ${
     withTopOffset ? "mt-16" : "mt-0"

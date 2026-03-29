@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorks } from "../hooks/useWorks";
 import { useCategories } from "../hooks/useCategories";
+import { useSEO } from "../hooks/useSEO";
 
 function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
   const [selectedMedia, setSelectedMedia] = useState(null); // { type: 'image' | 'video', url }
@@ -260,6 +261,13 @@ function WorkPages() {
   const categoryInfo = categories.find(c => c.slug === category) || null;
   const displayName = categoryInfo?.name || category;
   const displayDesc = categoryInfo?.description || "";
+
+  useSEO({
+    title: `${displayName} Portfolio — Pratik Bhusal`,
+    description: displayDesc || `Explore Pratik Bhusal's portfolio of ${displayName} projects and creative works.`,
+    canonicalPath: `/portfolio/${category}`,
+    keywords: [displayName.toLowerCase(), 'portfolio', 'pratik bhusal', 'creative work', 'design showcase'],
+  });
 
   return (
     <div

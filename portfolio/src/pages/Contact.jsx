@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
+import { useSEO } from "../hooks/useSEO";
 
 const contactChips = ["fast reply", "global remote", "high polish"];
 
@@ -99,6 +100,26 @@ const CustomSelect = ({ label, options, value, onChange, name }) => {
 function Contact({ withTopOffset = true }) {
   const whatsappNumber = "9779800722127";
   const sectionRef = useRef(null);
+
+  useSEO({
+    title: 'Contact Pratik Bhusal — Hire a Developer & Designer',
+    description: 'Ready to build something amazing? Contact Pratik Bhusal for Logo Design, Brand Identity, Video Editing, or Web Development projects. Quick replies guaranteed.',
+    canonicalPath: '/contact',
+    keywords: ['contact creative pratik', 'hire graphic designer', 'hire video editor', 'freelance designer Nepal', 'contact Pratik Bhusal'],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'ContactPage',
+      name: 'Contact Pratik Bhusal',
+      url: 'https://creativepratik.com/contact',
+      description: 'Contact form and details for Pratik Bhusal.',
+      mainEntity: {
+        '@type': 'Person',
+        name: 'Pratik Bhusal',
+        email: 'mail@creativepratik.com',
+        telephone: '+9779762519961',
+      },
+    },
+  });
 
   const [formData, setFormData] = React.useState({
     name: "",
