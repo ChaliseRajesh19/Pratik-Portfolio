@@ -100,7 +100,7 @@ const Footer = () => {
               Kapilvastu, Nepal
             </span>
             <a 
-              href="https://wa.me/9779800722127" 
+              href="https://wa.me/9779762519961" 
               target="_blank" 
               rel="noreferrer"
               className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group"

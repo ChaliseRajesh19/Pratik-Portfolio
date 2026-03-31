@@ -1,5 +1,6 @@
 import { motion, useScroll, useVelocity, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion'
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { SectionHeader } from './SectionHeader'
 import { SectionMotionShell } from './motion/SectionMotionShell'
 import { useTestimonials } from '../hooks/useTestimonials'
@@ -53,7 +54,7 @@ function Avatar({ avatarUrl, name }) {
 }
 
 /* ─── Single card — animated by scroll direction ─────────── */
-function TestimonialCard({ t, index }) {
+export function TestimonialCard({ t, index }) {
   const delay = index * 0.06
 
   return (
@@ -180,11 +181,15 @@ function SkeletonRow({ count = 4 }) {
 export default function Testimonials() {
   const { testimonials, loading } = useTestimonials()
 
+  const MAX_ON_HOME = 12
+  const isOverLimit = testimonials.length > MAX_ON_HOME
+  const displayTestimonials = isOverLimit ? testimonials.slice(0, MAX_ON_HOME) : testimonials
+
   /* Split into two rows */
-  const half = Math.ceil(testimonials.length / 2)
-  const row1 = testimonials.slice(0, half)
-  const row2 = testimonials.slice(half)
-  const canShow = !loading && testimonials.length >= 2
+  const half = Math.ceil(displayTestimonials.length / 2)
+  const row1 = displayTestimonials.slice(0, half)
+  const row2 = displayTestimonials.slice(half)
+  const canShow = !loading && displayTestimonials.length >= 2
 
   return (
     <SectionMotionShell
@@ -209,13 +214,13 @@ export default function Testimonials() {
             <SkeletonRow count={4} />
             <SkeletonRow count={4} />
           </>
-        ) : testimonials.length === 0 ? (
+        ) : displayTestimonials.length === 0 ? (
           <p className="text-center text-slate-500 py-12">No testimonials yet.</p>
         ) : canShow ? (
           <>
             {/* Row 1 → always scrolls left */}
             <MarqueeRow
-              items={row1.length >= 2 ? row1 : testimonials}
+              items={row1.length >= 2 ? row1 : displayTestimonials}
               marqueDir={1}
               speed={38}
             />
@@ -231,7 +236,7 @@ export default function Testimonials() {
         ) : (
           /* Fallback for <2 items */
           <div className="flex justify-center gap-4 flex-wrap px-4">
-            {testimonials.map((t, i) => (
+            {displayTestimonials.map((t, i) => (
               <TestimonialCard key={t.id} t={t} index={i} />
             ))}
           </div>
@@ -250,15 +255,16 @@ export default function Testimonials() {
         style={{ background: 'linear-gradient(270deg, var(--portfolio-bg) 0%, transparent 100%)' }}
       />
 
-      {/* Trust badge */}
+      {/* Trust badge & View All Button Container */}
       {!loading && testimonials.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="relative z-10 mt-14 flex justify-center px-4"
+           initial={{ opacity: 0, y: 16 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true, amount: 0.5 }}
+           transition={{ duration: 0.6, delay: 0.3 }}
+           className="relative z-10 mt-14 flex flex-col md:flex-row items-center justify-center gap-6 px-4"
         >
+          {/* Trust badge */}
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md shadow-inner">
             <div className="flex -space-x-2">
               {testimonials.slice(0, 4).map((t, i) => (
@@ -278,9 +284,22 @@ export default function Testimonials() {
             </div>
             <p className="text-slate-300 text-sm font-medium">
               Trusted by{' '}
-              <span className="text-white font-bold">100+</span> happy clients worldwide
+              <span className="text-white font-bold">100+</span> happy clients
             </p>
           </div>
+
+          {/* View All Button */}
+          {isOverLimit && (
+            <Link
+              to="/testimonials"
+              className="group flex items-center gap-2 px-8 py-3.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm tracking-wide shadow-[0_0_30px_rgba(124,58,237,0.3)] hover:shadow-[0_0_40px_rgba(124,58,237,0.5)] transition-all duration-300 transform hover:-translate-y-1"
+            >
+              <span>View All Testimonials</span>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="transform transition-transform group-hover:translate-x-1">
+                <path d="M4.16669 10H15.8334M15.8334 10L10 4.16669M15.8334 10L10 15.8334" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+          )}
         </motion.div>
       )}
     </SectionMotionShell>

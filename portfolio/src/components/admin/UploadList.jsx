@@ -6,7 +6,7 @@ import UploadForm from './UploadForm'
 import { toast } from 'react-hot-toast'
 import { useWorks } from '../../hooks/useWorks'
 
-function UploadList({ category, categories, onCategoryChange, refreshKey, onAddWork }) {
+function UploadList({ category, categories, onCategoryChange, refreshKey }) {
   const fetchCategory = category === 'All Categories' ? undefined : category
   const { works, loading, deleteWork, refetch } = useWorks({ category: fetchCategory })
   const [search, setSearch] = React.useState('')
@@ -15,7 +15,7 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
   const [isUploadOpen, setIsUploadOpen] = React.useState(false)
   const [editWorkItem, setEditWorkItem] = React.useState(null)
 
-  React.useEffect(() => { refetch() }, [refreshKey, category])
+  React.useEffect(() => { refetch() }, [refreshKey, category, refetch])
 
 
   const handleDeleteConfirm = async () => {
@@ -137,9 +137,13 @@ function UploadList({ category, categories, onCategoryChange, refreshKey, onAddW
           categories={categories}
           defaultCategory={category !== 'All Categories' ? category : ''}
           initialWork={editWorkItem}
-          onUploaded={() => {
+          onUploaded={(uploadedCategory) => {
             setIsUploadOpen(false)
             setEditWorkItem(null)
+            if (uploadedCategory && category !== 'All Categories' && uploadedCategory !== category) {
+              onCategoryChange(uploadedCategory)
+            }
+            refetch()
           }}
           onCancel={() => {
             setIsUploadOpen(false)

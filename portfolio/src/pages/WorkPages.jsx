@@ -257,6 +257,13 @@ function WorkPages() {
   const { categories } = useCategories();
   const { works, loading } = useWorks({ category });
   const [selected, setSelected] = useState(null);
+  const orderedWorks = React.useMemo(() => {
+    return [...works].sort((left, right) => {
+      const orderDelta = (left.displayOrder || 0) - (right.displayOrder || 0);
+      if (orderDelta !== 0) return orderDelta;
+      return new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime();
+    });
+  }, [works]);
 
   const categoryInfo = categories.find(c => c.slug === category) || null;
   const displayName = categoryInfo?.name || category;
@@ -328,7 +335,7 @@ function WorkPages() {
           </div>
         )}
 
-        {!loading && works.length === 0 && (
+        {!loading && orderedWorks.length === 0 && (
           <div style={{ textAlign: "center", padding: "70px 0" }}>
             <p style={{ color: "#475569", fontSize: 14 }}>
               No images in this category yet.
@@ -336,9 +343,9 @@ function WorkPages() {
           </div>
         )}
 
-        {!loading && works.length > 0 && (
+        {!loading && orderedWorks.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {works.map((work, i) => (
+            {orderedWorks.map((work, i) => (
               <WorkCard
                 key={work._id || i}
                 work={work}

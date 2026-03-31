@@ -28,15 +28,32 @@ if (Quill.imports?.['attributors/style/lineheight'] !== LineHeightStyle) {
 	Quill.register(LineHeightStyle, true)
 }
 
-const WidthStyle = new Parchment.Attributor.Style('width', 'width', {
-	scope: Parchment.Scope.INLINE,
-})
-const HeightStyle = new Parchment.Attributor.Style('height', 'height', {
-	scope: Parchment.Scope.INLINE,
-})
+const BaseImageFormat = Quill.import('formats/image');
+const ImageFormatAttributesList = ['alt', 'height', 'width', 'style'];
 
-Quill.register(WidthStyle, true)
-Quill.register(HeightStyle, true)
+class CustomImage extends BaseImageFormat {
+  static formats(domNode) {
+    return ImageFormatAttributesList.reduce(function(formats, attribute) {
+      if (domNode.hasAttribute(attribute)) {
+        formats[attribute] = domNode.getAttribute(attribute);
+      }
+      return formats;
+    }, {});
+  }
+  format(name, value) {
+    if (ImageFormatAttributesList.indexOf(name) > -1) {
+      if (value) {
+        this.domNode.setAttribute(name, value);
+      } else {
+        this.domNode.removeAttribute(name);
+      }
+    } else {
+      super.format(name, value);
+    }
+  }
+}
+
+Quill.register('formats/image', CustomImage, true);
 
 const TOOLBAR_OPTIONS = [
 	[{ header: [1, 2, 3, 4, 5, 6, false] }],
@@ -74,6 +91,7 @@ const FORMATS = [
 	'video',
 	'width',
 	'height',
+	'style'
 ]
 
 function normalizeMediaUrl(value) {
@@ -86,6 +104,7 @@ function normalizeMediaUrl(value) {
 
 function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }) {
 	const [linkModal, setLinkModal] = useState({ isOpen: false, url: '', text: '', range: null, quill: null })
+	const [imageModal, setImageModal] = useState({ isOpen: false, imgNode: null, float: 'none', display: 'inline', margin: '' })
 	const fileInputRef = useRef(null)
 	const editorShellRef = useRef(null)
 	const quillInstanceRef = useRef(null)
@@ -174,6 +193,25 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 		if (!quill) return
 
 		quillInstanceRef.current = quill
+
+		const handleDblClick = (e) => {
+			if (e.target.tagName === 'IMG') {
+				const img = e.target;
+				setImageModal({
+					isOpen: true,
+					imgNode: img,
+					float: img.style.float || 'none',
+					display: img.style.display || 'inline',
+					margin: img.style.margin || ''
+				});
+			}
+		}
+
+		quill.root.addEventListener('dblclick', handleDblClick);
+
+		return () => {
+			quill.root.removeEventListener('dblclick', handleDblClick);
+		}
 	}, [])
 
 	const modules = useMemo(
@@ -195,7 +233,7 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 			},
 			imageResize: {
 				parchment: Quill.import('parchment'),
-				modules: ['Resize']
+				modules: ['Resize', 'DisplaySize']
 			}
 		}),
 		[openLinkModal]
@@ -221,6 +259,78 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 				style={{ display: 'none' }}
 				onChange={handleImageUpload}
 			/>
+
+			{/* Image Properties Modal Dialog */}
+			{imageModal.isOpen && (
+				<div className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 rounded-xl backdrop-blur-sm shadow-2xl">
+					<div className="bg-slate-900 border border-slate-700/80 rounded-xl p-5 w-full max-w-sm">
+						<h3 className="text-xl font-bold text-white mb-5">Image Placement</h3>
+						<div className="space-y-5">
+							<div>
+								<label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Alignment / Text Wrap</label>
+								<div className="flex gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-700/60">
+									<button type="button" 
+										onClick={() => setImageModal({...imageModal, float: 'left', display: 'inline', margin: '0 1.5em 1em 0'})} 
+										className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${imageModal.float === 'left' ? 'bg-violet-600 shadow-md text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+										Left
+									</button>
+									<button type="button" 
+										onClick={() => setImageModal({...imageModal, float: 'none', display: 'block', margin: '1em auto'})} 
+										className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${imageModal.display === 'block' && imageModal.float !== 'left' && imageModal.float !== 'right' ? 'bg-violet-600 shadow-md text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+										Center
+									</button>
+									<button type="button" 
+										onClick={() => setImageModal({...imageModal, float: 'right', display: 'inline', margin: '0 0 1em 1.5em'})} 
+										className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${imageModal.float === 'right' ? 'bg-violet-600 shadow-md text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+										Right
+									</button>
+								</div>
+							</div>
+							<div>
+								<label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Custom Spacing (Margin)</label>
+								<input 
+									type="text" 
+									value={imageModal.margin} 
+									onChange={e => setImageModal({...imageModal, margin: e.target.value})} 
+									className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors" 
+									placeholder="e.g. 10px 20px" 
+								/>
+								<p className="mt-1.5 text-[10px] text-slate-500">CSS shorthand (top right bottom left), or type 'auto' for center.</p>
+							</div>
+						</div>
+						<div className="flex justify-end gap-3 mt-8">
+							<button type="button" onClick={() => setImageModal({isOpen: false, imgNode: null, float: '', display: '', margin: ''})} className="px-5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">Cancel</button>
+							<button type="button" onClick={() => {
+								if (imageModal.imgNode && quillInstanceRef.current) {
+									const img = imageModal.imgNode;
+									img.style.float = imageModal.float !== 'none' ? imageModal.float : '';
+									img.style.display = imageModal.display;
+									img.style.margin = imageModal.margin;
+									
+									img.setAttribute('style', img.style.cssText);
+									
+									const blot = Quill.find(img);
+									if (blot) {
+										const index = quillInstanceRef.current.getIndex(blot);
+										if (index !== undefined) {
+											quillInstanceRef.current.formatText(index, 1, 'style', img.style.cssText, 'user');
+										}
+									}
+									
+									// Force React to get the latest HTML output
+									onChange(quillInstanceRef.current.root.innerHTML);
+									
+									// Force the resize module overlay to perfectly re-align to the new image position
+									setTimeout(() => {
+										window.dispatchEvent(new Event('resize'));
+									}, 50);
+								}
+								setImageModal({isOpen: false, imgNode: null, float: '', display: '', margin: ''})
+							}} className="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-violet-500/20 transition-all active:scale-95">Apply Settings</button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Custom Link Modal Dialog */}
 			{linkModal.isOpen && (

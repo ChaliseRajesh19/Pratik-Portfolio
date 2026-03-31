@@ -98,7 +98,7 @@ const CustomSelect = ({ label, options, value, onChange, name }) => {
 };
 
 function Contact({ withTopOffset = true }) {
-  const whatsappNumber = "9779800722127";
+  const whatsappNumber = "9779762519961";
   const sectionRef = useRef(null);
 
   useSEO({

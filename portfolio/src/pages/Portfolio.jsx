@@ -51,8 +51,14 @@ function Portfolio({ withTopOffset = true, limit = null, showViewAll = false }) 
   
   React.useEffect(() => {
     if (categories?.length > 0) {
+      const orderedCategories = [...categories].sort((left, right) => {
+        const orderDelta = (left.displayOrder || 0) - (right.displayOrder || 0);
+        if (orderDelta !== 0) return orderDelta;
+        return new Date(left.createdAt || 0).getTime() - new Date(right.createdAt || 0).getTime();
+      });
+
       setWorks(
-        categories.map((cat, i) => ({
+        orderedCategories.map((cat, i) => ({
           id: cat._id || i,
           title: cat.name,
           description: cat.description || "",

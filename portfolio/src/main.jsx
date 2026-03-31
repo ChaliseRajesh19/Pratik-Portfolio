@@ -15,6 +15,7 @@ import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import RequireAuth from "./components/admin/RequireAuth.jsx";
 import WorkPages from "./pages/WorkPages.jsx";
+import TestimonialsPage from "./pages/TestimonialsPage.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -28,6 +29,7 @@ const router = createBrowserRouter(
         <Route path='portfolio/:category' element={<WorkPages/>} />
         <Route path='blogs' element={<Blog/>} />
         <Route path='blog/:id' element={<BlogPost/>} />
+        <Route path='testimonials' element={<TestimonialsPage/>} />
       </Route>
 
       <Route path="/admin">
