@@ -29,7 +29,7 @@ if (Quill.imports?.['attributors/style/lineheight'] !== LineHeightStyle) {
 }
 
 const BaseImageFormat = Quill.import('formats/image')
-const ImageFormatAttributesList = ['alt', 'height', 'width', 'style']
+const ImageFormatAttributesList = ['alt', 'height', 'width', 'style', 'data-placement', 'data-x', 'data-y', 'data-margin', 'data-side']
 
 class CustomImage extends BaseImageFormat {
 	static formats(domNode) {
@@ -154,8 +154,32 @@ const DEFAULT_IMAGE_MODAL = {
 	margin: '',
 	alt: '',
 	position: { top: 24, left: 24 },
+	frame: null,
 	freeX: '',
 	freeY: '',
+}
+
+const IMAGE_SNAP_GRID = 8
+const IMAGE_MIN_WIDTH = 120
+const IMAGE_MAX_WIDTH = 720
+const IMAGE_RESIZE_HANDLES = [
+	{ key: 'nw', className: '-left-2.5 -top-2.5 cursor-nwse-resize' },
+	{ key: 'ne', className: '-right-2.5 -top-2.5 cursor-nesw-resize' },
+	{ key: 'sw', className: '-bottom-2.5 -left-2.5 cursor-nesw-resize' },
+	{ key: 'se', className: '-bottom-2.5 -right-2.5 cursor-nwse-resize' },
+]
+
+function clamp(value, min, max) {
+	return Math.min(max, Math.max(min, value))
+}
+
+function snapToGrid(value) {
+	return Math.round(value / IMAGE_SNAP_GRID) * IMAGE_SNAP_GRID
+}
+
+function parseNumericValue(value, fallback = 0) {
+	const parsed = Number.parseFloat(`${value ?? ''}`)
+	return Number.isFinite(parsed) ? parsed : fallback
 }
 
 function normalizeMediaUrl(value) {
@@ -181,9 +205,14 @@ function inferImagePreset(img) {
 }
 
 function extractFreePosition(img) {
+	const editorRect = img.closest('.ql-editor')?.getBoundingClientRect()
+	const imageRect = img.getBoundingClientRect()
+	const fallbackX = editorRect ? Math.max(0, imageRect.left - editorRect.left) : 0
+	const fallbackY = editorRect ? Math.max(0, imageRect.top - editorRect.top) : 0
+
 	return {
-		freeX: img.style.left ? img.style.left.replace('px', '') : '',
-		freeY: img.style.top ? img.style.top.replace('px', '') : '',
+		freeX: img.getAttribute('data-x') || `${snapToGrid(fallbackX)}`,
+		freeY: img.getAttribute('data-y') || `${snapToGrid(fallbackY)}`,
 	}
 }
 
@@ -200,47 +229,38 @@ function extractWidth(img) {
 	return renderedWidth > 0 ? String(renderedWidth) : '320'
 }
 
-function applyImagePreset(img, imageModal) {
-	const preset = IMAGE_PRESETS[imageModal.preset] || IMAGE_PRESETS.center
-	const nextWidth = imageModal.width?.trim()
-	const placementKey =
-		imageModal.preset === 'free'
-			? 'free'
-			: imageModal.preset === 'leftWrap'
-			? 'left'
-			: imageModal.preset === 'rightWrap'
-				? 'right'
-				: imageModal.preset === 'topBottom'
-					? 'topBottom'
-					: imageModal.preset === 'inline'
-						? 'inline'
-						: 'center'
+function extractMargin(img) {
+	return img.getAttribute('data-margin') || img.style.margin || ''
+}
 
-	img.style.float = preset.float === 'none' ? '' : preset.float
-	img.style.display = preset.display
-	img.style.clear = preset.clear === 'none' ? '' : preset.clear
-	img.style.margin = imageModal.margin || preset.margin
-	img.style.verticalAlign = preset.verticalAlign || ''
-	img.style.maxWidth = '100%'
-	img.style.height = 'auto'
+function getImageFrame(img, shell) {
+	const imgRect = img.getBoundingClientRect()
+	const shellRect = shell?.getBoundingClientRect()
 
-	if (placementKey === 'free') {
-		img.style.position = 'absolute'
-		img.style.left = imageModal.freeX ? `${imageModal.freeX}px` : img.style.left || '0px'
-		img.style.top = imageModal.freeY ? `${imageModal.freeY}px` : img.style.top || '0px'
-		img.style.zIndex = '5'
-		img.style.margin = '0'
-	} else {
-		img.style.position = ''
-		img.style.left = ''
-		img.style.top = ''
-		img.style.zIndex = ''
+	if (!shellRect) {
+		return null
 	}
 
+	return {
+		top: imgRect.top - shellRect.top,
+		left: imgRect.left - shellRect.left,
+		width: imgRect.width,
+		height: imgRect.height,
+	}
+}
+
+function applyImagePreset(img, imageModal) {
+	const nextWidth = imageModal.width?.trim()
+	const placementKey = 'free'
+	const freeX = snapToGrid(parseNumericValue(imageModal.freeX, parseNumericValue(img.style.left, 0)))
+	const freeY = snapToGrid(parseNumericValue(imageModal.freeY, parseNumericValue(img.style.top, 0)))
+
 	if (nextWidth) {
-		img.style.width = /^\d+$/.test(nextWidth) ? `${nextWidth}px` : nextWidth
+		img.style.width = /^\d+(\.\d+)?$/.test(nextWidth) ? `${nextWidth}px` : nextWidth
+		img.setAttribute('width', `${Math.round(parseNumericValue(nextWidth, parseNumericValue(img.getBoundingClientRect().width, 320)))}`)
 	} else {
 		img.style.removeProperty('width')
+		img.removeAttribute('width')
 	}
 
 	if (imageModal.alt?.trim()) {
@@ -250,71 +270,89 @@ function applyImagePreset(img, imageModal) {
 	}
 
 	img.setAttribute('data-placement', placementKey)
+	applyFreeImagePosition(img, freeX, freeY)
 }
 
 function getImageModalPosition(img, shell) {
-	const imgRect = img.getBoundingClientRect()
 	const shellRect = shell?.getBoundingClientRect()
+	const frame = getImageFrame(img, shell)
 
-	if (!shellRect) {
+	if (!shellRect || !frame) {
 		return { top: 24, left: 24 }
 	}
 
-	const modalWidth = 380
-	const modalHeight = 290
+	const modalWidth = 360
+	const modalHeight = 240
 	const gap = 12
 
-	let left = imgRect.right - shellRect.left + gap
-	let top = imgRect.top - shellRect.top
-
-	if (left + modalWidth > shellRect.width - 12) {
-		left = imgRect.left - shellRect.left - modalWidth - gap
-	}
-
-	if (left < 12) {
-		left = Math.max(12, shellRect.width - modalWidth - 12)
-	}
+	let left = frame.left + Math.max(0, frame.width - modalWidth)
+	let top = frame.top + frame.height + gap
 
 	if (top + modalHeight > shellRect.height - 12) {
-		top = shellRect.height - modalHeight - 12
+		top = frame.top - modalHeight - gap
 	}
 
-	if (top < 12) {
-		top = 12
+	return {
+		top: clamp(top, 12, Math.max(12, shellRect.height - modalHeight - 12)),
+		left: clamp(left, 12, Math.max(12, shellRect.width - modalWidth - 12)),
 	}
-
-	return { top, left }
 }
 
-function getDragPlacement(clientX, shellRect) {
-	if (!shellRect) return 'center'
+function applyFreeImagePosition(img, x, y, preferredSide = null) {
+	const nextX = snapToGrid(Math.max(0, x))
+	const editorRect = img.closest('.ql-editor')?.getBoundingClientRect()
+	const imageRect = img.getBoundingClientRect()
+	const imageWidth = parseNumericValue(img.getAttribute('width'), imageRect.width || 240)
+	const editorWidth = editorRect?.width || 0
+	const minY = editorRect ? -Math.max(0, imageRect.top - editorRect.top) : -240
+	const nextY = snapToGrid(clamp(y, minY, Math.max(0, (editorRect?.height || 0) - imageRect.height)))
+	const side = preferredSide || img.getAttribute('data-side') || (editorWidth > 0 && nextX > (editorWidth - imageWidth) / 2 ? 'right' : 'left')
+	const alignRight = side === 'right'
+	const rightOffset = Math.max(0, editorWidth - nextX - imageWidth)
 
-	const relativeX = clientX - shellRect.left
-	const leftZone = shellRect.width * 0.33
-	const rightZone = shellRect.width * 0.67
-
-	if (relativeX <= leftZone) return 'leftWrap'
-	if (relativeX >= rightZone) return 'rightWrap'
-	return 'center'
-}
-
-function applyFreeImagePosition(img, x, y) {
 	img.setAttribute('data-placement', 'free')
-	img.style.position = 'absolute'
-	img.style.float = ''
+	img.style.position = 'relative'
+	img.style.left = `${nextX}px`
+	img.style.top = `${nextY}px`
+	img.style.bottom = ''
+	img.style.float = alignRight ? 'right' : 'left'
 	img.style.clear = ''
 	img.style.display = 'block'
-	img.style.left = `${x}px`
-	img.style.top = `${y}px`
-	img.style.margin = '0'
-	img.style.zIndex = '5'
+	img.style.marginTop = '0'
+	img.style.marginBottom = '1rem'
+	img.style.marginLeft = alignRight ? '1rem' : `${nextX}px`
+	img.style.marginRight = alignRight ? `${rightOffset}px` : '1rem'
+	img.style.zIndex = '1'
 	img.style.height = 'auto'
 	img.style.maxWidth = '100%'
+	img.style.verticalAlign = ''
+	img.setAttribute('data-x', String(nextX))
+	img.setAttribute('data-y', String(nextY))
+	img.setAttribute('data-margin', `${nextY}px`)
+	img.setAttribute('data-side', side)
+}
+
+function buildImageToolbarState(img, shell) {
+	const freePosition = extractFreePosition(img)
+
+	return {
+		isOpen: true,
+		imgNode: img,
+		preset: 'free',
+		width: extractWidth(img),
+		margin: extractMargin(img),
+		alt: img.getAttribute('alt') || '',
+		position: getImageModalPosition(img, shell),
+		frame: getImageFrame(img, shell),
+		freeX: freePosition.freeX,
+		freeY: freePosition.freeY,
+	}
 }
 
 function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }) {
 	const [linkModal, setLinkModal] = useState({ isOpen: false, url: '', text: '', range: null, quill: null })
 	const [imageModal, setImageModal] = useState(DEFAULT_IMAGE_MODAL)
+	const [isTransformingImage, setIsTransformingImage] = useState(false)
 	const fileInputRef = useRef(null)
 	const editorShellRef = useRef(null)
 	const quillInstanceRef = useRef(null)
@@ -325,22 +363,36 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 		img: null,
 		startX: 0,
 		startY: 0,
+		baseX: 0,
+		baseY: 0,
+		side: 'left',
+	})
+	const imageResizeRef = useRef({
+		active: false,
+		handle: '',
+		img: null,
+		startX: 0,
+		startWidth: 0,
+		startLeft: 0,
+		startTop: 0,
+		moved: false,
 	})
 
+	const syncImageModalFromNode = useCallback((img) => {
+		if (!img?.isConnected) {
+			setImageModal(DEFAULT_IMAGE_MODAL)
+			return
+		}
+
+		setImageModal((current) => ({
+			...current,
+			...buildImageToolbarState(img, editorShellRef.current),
+		}))
+	}, [])
+
 	const openImageModalForNode = useCallback((img) => {
-		const position = getImageModalPosition(img, editorShellRef.current)
-		const freePosition = extractFreePosition(img)
-		setImageModal({
-			isOpen: true,
-			imgNode: img,
-			preset: inferImagePreset(img),
-			width: extractWidth(img),
-			margin: img.style.margin || '',
-			alt: img.getAttribute('alt') || '',
-			position,
-			freeX: freePosition.freeX,
-			freeY: freePosition.freeY,
-		})
+		if (!img) return
+		setImageModal(buildImageToolbarState(img, editorShellRef.current))
 	}, [])
 
 	const openLinkModal = useCallback((quill) => {
@@ -436,8 +488,22 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 			}
 
 			quill.insertEmbed(insertAt, 'image', url, 'user')
-			quill.insertText(insertAt + 1, '\n', 'user')
+			quill.insertText(insertAt + 1, ' ', 'user')
 			quill.setSelection(insertAt + 2, 0)
+
+			requestAnimationFrame(() => {
+				const [leaf] = quill.getLeaf(insertAt)
+				const imgNode =
+					leaf?.domNode?.tagName === 'IMG'
+						? leaf.domNode
+						: Array.from(quill.root.querySelectorAll('img')).find((img) => img.getAttribute('src') === url && !img.getAttribute('data-placement'))
+
+				if (!imgNode) return
+
+				applyFreeImagePosition(imgNode, 0, 0, 'left')
+				imgNode.setAttribute('style', imgNode.style.cssText)
+				onChange(quill.root.innerHTML)
+			})
 		} catch (error) {
 			toast.error('Image upload failed: ' + error.message)
 		}
@@ -449,10 +515,38 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 
 	const handleEditorChange = useCallback(
 		(content) => {
+			if (imageModal.imgNode && !imageModal.imgNode.isConnected) {
+				setImageModal(DEFAULT_IMAGE_MODAL)
+			}
 			onChange(content)
 		},
-		[onChange]
+		[imageModal.imgNode, onChange]
 	)
+
+	const beginImageResize = useCallback((handle, event) => {
+		if (!imageModal.imgNode) return
+
+		event.preventDefault()
+		event.stopPropagation()
+
+		const currentImage = imageModal.imgNode
+		const freePosition = extractFreePosition(currentImage)
+
+		imageResizeRef.current = {
+			active: true,
+			handle,
+			img: currentImage,
+			startX: event.clientX,
+			startWidth: parseNumericValue(extractWidth(currentImage), currentImage.getBoundingClientRect().width),
+			startLeft: parseNumericValue(freePosition.freeX, 0),
+			startTop: parseNumericValue(freePosition.freeY, 0),
+			moved: false,
+		}
+
+		setIsTransformingImage(true)
+		currentImage.classList.add('is-dragging-image')
+		document.body.style.userSelect = 'none'
+	}, [imageModal.imgNode])
 
 	useEffect(() => {
 		const quill = reactQuillRef.current?.getEditor?.()
@@ -479,20 +573,61 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 		const handlePointerDown = (e) => {
 			if (e.target.tagName !== 'IMG') return
 
+			if (e.target.getAttribute('data-placement') !== 'free') {
+				e.target.setAttribute('data-placement', 'free')
+				e.target.setAttribute('data-x', '0')
+				e.target.setAttribute('data-y', '0')
+				e.target.setAttribute('data-side', e.target.style.float === 'right' ? 'right' : 'left')
+			}
+
+			const currentPosition = extractFreePosition(e.target)
+
 			imageDragRef.current = {
 				active: true,
 				moved: false,
 				img: e.target,
 				startX: e.clientX,
 				startY: e.clientY,
-				offsetX: e.clientX - e.target.getBoundingClientRect().left,
-				offsetY: e.clientY - e.target.getBoundingClientRect().top,
+				baseX: parseNumericValue(currentPosition.freeX, 0),
+				baseY: parseNumericValue(currentPosition.freeY, 0),
+				side: e.target.getAttribute('data-side') || (e.target.style.float === 'right' ? 'right' : 'left'),
 			}
 
+			setIsTransformingImage(true)
 			e.target.classList.add('is-dragging-image')
+			document.body.style.userSelect = 'none'
+			e.preventDefault()
 		}
 
 		const handlePointerMove = (e) => {
+			if (imageResizeRef.current.active && imageResizeRef.current.img) {
+				const resizeImage = imageResizeRef.current.img
+				const editorRect = quill.root.getBoundingClientRect()
+				const movingLeftEdge = imageResizeRef.current.handle.includes('w')
+				const deltaX = e.clientX - imageResizeRef.current.startX
+				const proposedWidth = movingLeftEdge
+					? imageResizeRef.current.startWidth - deltaX
+					: imageResizeRef.current.startWidth + deltaX
+				const nextWidth = clamp(snapToGrid(proposedWidth), IMAGE_MIN_WIDTH, IMAGE_MAX_WIDTH)
+
+				resizeImage.style.width = `${nextWidth}px`
+				resizeImage.setAttribute('width', `${nextWidth}`)
+				resizeImage.style.maxWidth = '100%'
+
+				if (inferImagePreset(resizeImage) === 'free' && movingLeftEdge) {
+					const widthDelta = nextWidth - imageResizeRef.current.startWidth
+					const nextLeft = clamp(
+						snapToGrid(imageResizeRef.current.startLeft - widthDelta),
+						0,
+						Math.max(0, editorRect.width - nextWidth)
+					)
+					applyFreeImagePosition(resizeImage, nextLeft, imageResizeRef.current.startTop)
+				}
+
+				imageResizeRef.current.moved = true
+				return
+			}
+
 			if (!imageDragRef.current.active || !imageDragRef.current.img) return
 
 			const deltaX = Math.abs(e.clientX - imageDragRef.current.startX)
@@ -504,16 +639,44 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 			const img = imageDragRef.current.img
 			const editorRect = quill.root.getBoundingClientRect()
 			const imgRect = img.getBoundingClientRect()
-			const x = Math.max(0, e.clientX - editorRect.left - imageDragRef.current.offsetX)
-			const y = Math.max(0, e.clientY - editorRect.top - imageDragRef.current.offsetY)
+			const x = Math.max(0, imageDragRef.current.baseX + (e.clientX - imageDragRef.current.startX))
+			const y = Math.max(0, imageDragRef.current.baseY + (e.clientY - imageDragRef.current.startY))
 			const maxX = Math.max(0, editorRect.width - imgRect.width)
+			const maxY = Math.max(0, editorRect.height - imgRect.height)
 
-			applyFreeImagePosition(img, Math.min(x, maxX), y)
+			applyFreeImagePosition(img, Math.min(x, maxX), Math.min(y, maxY), imageDragRef.current.side)
 		}
 
 		const finishPointerDrag = () => {
+			if (imageResizeRef.current.img) {
+				const resizedImg = imageResizeRef.current.img
+				resizedImg.classList.remove('is-dragging-image')
+
+				if (imageResizeRef.current.moved) {
+					persistImageNode(resizedImg)
+					syncImageModalFromNode(resizedImg)
+				}
+
+				imageResizeRef.current = {
+					active: false,
+					handle: '',
+					img: null,
+					startX: 0,
+					startWidth: 0,
+					startLeft: 0,
+					startTop: 0,
+					moved: false,
+				}
+
+				setIsTransformingImage(false)
+				document.body.style.userSelect = ''
+				return
+			}
+
 			if (!imageDragRef.current.img) {
 				imageDragRef.current.active = false
+				setIsTransformingImage(false)
+				document.body.style.userSelect = ''
 				return
 			}
 
@@ -522,6 +685,7 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 
 			if (imageDragRef.current.moved) {
 				persistImageNode(draggedImg)
+				syncImageModalFromNode(draggedImg)
 				setTimeout(() => {
 					window.dispatchEvent(new Event('resize'))
 				}, 50)
@@ -533,9 +697,13 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 				img: null,
 				startX: 0,
 				startY: 0,
-				offsetX: 0,
-				offsetY: 0,
+				baseX: 0,
+				baseY: 0,
+				side: 'left',
 			}
+
+			setIsTransformingImage(false)
+			document.body.style.userSelect = ''
 		}
 
 		const handleContextMenu = (e) => {
@@ -561,8 +729,38 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 			window.removeEventListener('pointermove', handlePointerMove)
 			window.removeEventListener('pointerup', finishPointerDrag)
 			window.removeEventListener('pointercancel', finishPointerDrag)
+			document.body.style.userSelect = ''
 		}
-	}, [openImageModalForNode, persistImageNode])
+	}, [openImageModalForNode, persistImageNode, syncImageModalFromNode])
+
+	useEffect(() => {
+		if (!imageModal.isOpen || !imageModal.imgNode) return
+
+		const handlePointerDownOutside = (event) => {
+			if (event.target === imageModal.imgNode) return
+			if (event.target?.closest?.('[data-image-selection-handle="true"]')) return
+			closeImageModal()
+		}
+
+		const syncOnViewportChange = () => syncImageModalFromNode(imageModal.imgNode)
+		const handleEscape = (event) => {
+			if (event.key === 'Escape') {
+				closeImageModal()
+			}
+		}
+
+		document.addEventListener('pointerdown', handlePointerDownOutside)
+		window.addEventListener('resize', syncOnViewportChange)
+		window.addEventListener('scroll', syncOnViewportChange, true)
+		window.addEventListener('keydown', handleEscape)
+
+		return () => {
+			document.removeEventListener('pointerdown', handlePointerDownOutside)
+			window.removeEventListener('resize', syncOnViewportChange)
+			window.removeEventListener('scroll', syncOnViewportChange, true)
+			window.removeEventListener('keydown', handleEscape)
+		}
+	}, [closeImageModal, imageModal.imgNode, imageModal.isOpen, syncImageModalFromNode])
 
 	const modules = useMemo(
 		() => ({
@@ -611,125 +809,27 @@ function BlogEditor({ value, onChange, placeholder = 'Write your post here...' }
 
 			{imageModal.isOpen && (
 				<div className="absolute inset-0 z-[60] rounded-xl pointer-events-none">
-					<div
-						className="absolute pointer-events-auto bg-slate-900/98 border border-slate-700/80 rounded-xl p-4 w-full max-w-md shadow-2xl shadow-black/40"
-						style={{
-							top: `${imageModal.position?.top ?? 24}px`,
-							left: `${imageModal.position?.left ?? 24}px`,
-							maxWidth: 'min(380px, calc(100% - 24px))',
-						}}
-					>
-						<h3 className="text-lg font-bold text-white mb-4">Image Placement</h3>
-						<div className="space-y-4">
-							<div>
-								<div className="grid grid-cols-2 gap-2">
-									{Object.entries(IMAGE_PRESETS).map(([key, preset]) => (
-										<button
-											key={key}
-											type="button"
-											onClick={() => setImageModal((current) => ({ ...current, preset: key, margin: current.margin || preset.margin }))}
-											className={`rounded-lg border px-3 py-2 text-sm font-semibold text-left transition-colors ${
-												imageModal.preset === key
-													? 'border-violet-500 bg-violet-500/15 text-white'
-													: 'border-slate-700/70 bg-slate-950/80 text-slate-300 hover:border-slate-500 hover:text-white'
-											}`}
-										>
-											{preset.label}
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div className="grid gap-3 sm:grid-cols-2">
-								<div>
-									<label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Width</label>
-									<input
-										type="text"
-										value={imageModal.width}
-										onChange={(e) => setImageModal((current) => ({ ...current, width: e.target.value }))}
-										className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
-										placeholder="320 or 50%"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Alt</label>
-									<input
-										type="text"
-										value={imageModal.alt}
-										onChange={(e) => setImageModal((current) => ({ ...current, alt: e.target.value }))}
-										className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
-										placeholder="Alt text"
-									/>
-								</div>
-							</div>
-
-							{imageModal.preset === 'free' && (
-								<div className="grid gap-3 sm:grid-cols-2">
-									<div>
-										<label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">X</label>
-										<input
-											type="text"
-											value={imageModal.freeX}
-											onChange={(e) => setImageModal((current) => ({ ...current, freeX: e.target.value }))}
-											className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
-											placeholder="0"
-										/>
-									</div>
-									<div>
-										<label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Y</label>
-										<input
-											type="text"
-											value={imageModal.freeY}
-											onChange={(e) => setImageModal((current) => ({ ...current, freeY: e.target.value }))}
-											className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
-											placeholder="0"
-										/>
-									</div>
-								</div>
-							)}
-
-							<div>
-								<label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Margin</label>
-								<input
-									type="text"
-									value={imageModal.margin}
-									onChange={(e) => setImageModal((current) => ({ ...current, margin: e.target.value }))}
-									className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
-									placeholder="e.g. 0 1em 1em 0"
+					{imageModal.frame && !isTransformingImage ? (
+						<div
+							className="absolute rounded-[1.25rem] border border-violet-400/80 bg-violet-500/5 shadow-[0_0_0_1px_rgba(139,92,246,0.2)]"
+							style={{
+								top: `${imageModal.frame.top - 4}px`,
+								left: `${imageModal.frame.left - 4}px`,
+								width: `${imageModal.frame.width + 8}px`,
+								height: `${imageModal.frame.height + 8}px`,
+							}}
+						>
+							{IMAGE_RESIZE_HANDLES.map((handle) => (
+								<button
+									key={handle.key}
+									type="button"
+									data-image-selection-handle="true"
+									onPointerDown={(event) => beginImageResize(handle.key, event)}
+									className={`absolute h-5 w-5 rounded-full border border-violet-300 bg-white shadow-lg shadow-violet-900/30 ${handle.className}`}
 								/>
-							</div>
+							))}
 						</div>
-
-						<div className="flex justify-end gap-3 mt-5">
-							<button
-								type="button"
-								onClick={closeImageModal}
-								className="px-5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									if (imageModal.imgNode && quillInstanceRef.current) {
-										const img = imageModal.imgNode
-										applyImagePreset(img, imageModal)
-										persistImageNode(img)
-
-										setTimeout(() => {
-											window.dispatchEvent(new Event('resize'))
-										}, 50)
-									}
-
-									closeImageModal()
-								}}
-								className="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-violet-500/20 transition-all active:scale-95"
-							>
-								Apply Settings
-							</button>
-						</div>
-					</div>
+					) : null}
 				</div>
 			)}
 

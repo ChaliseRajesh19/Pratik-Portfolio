@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { openPreferredEmail } from "../lib/email";
 import { motion } from "framer-motion";
 import { useSEO } from "../hooks/useSEO";
 import About from "./About";
@@ -75,7 +76,7 @@ function Home() {
   }, [location.state]);
 
   const handlehireClick = () => {
-    window.location.href = "mailto:mail@creativepratik.com";
+    openPreferredEmail();
   };
 
   const handleportfolio = () => {

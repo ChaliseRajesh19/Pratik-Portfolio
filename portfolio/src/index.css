@@ -201,7 +201,7 @@ body {
 	height: auto;
 	margin: 1.25rem auto;
 	border-radius: 1rem;
-	cursor: grab;
+	cursor: pointer;
 	transition: box-shadow 0.18s ease, transform 0.18s ease;
 }
 
@@ -213,6 +213,7 @@ body {
 	cursor: grabbing;
 	box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.48);
 	transform: scale(1.01);
+	transition: none;
 }
 
 .blog-editor-shell .ql-editor img[data-placement='left'],
@@ -259,12 +260,14 @@ body {
 
 .blog-editor-shell .ql-editor img[data-placement='free'],
 .blog-content img[data-placement='free'] {
-	position: absolute;
-	float: none;
+	position: static;
 	clear: none;
 	display: block;
 	margin: 0;
-	z-index: 5;
+	z-index: 1;
+	cursor: grab;
+	touch-action: none;
+	vertical-align: initial;
 }
 
 .blog-editor-shell .ql-editor::after,

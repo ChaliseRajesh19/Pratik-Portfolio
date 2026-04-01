@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
+import DeleteConfirmModal from "../components/admin/DeleteConfirmModal";
 import { useBlogs } from "../hooks/useBlogs";
 import { useComments } from "../hooks/useComments";
+import { useBlogView } from "../hooks/useBlogViews";
+import { useAuth } from "../hooks/useAuth";
 import { useSEO } from "../hooks/useSEO";
 import { getErrorMessage } from "../lib/api";
 
@@ -39,10 +42,12 @@ function Skeleton({ className }) {
 
 /* ── Comments / Discussion — backed by Supabase ── */
 function BlogComments({ blogId }) {
-  const { comments, loading, posting, error, postComment } = useComments(blogId);
+  const { comments, loading, posting, deletingCommentId, error, postComment, deleteComment } = useComments(blogId);
+  const { isAdmin } = useAuth();
   const [text, setText] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [posted, setPosted] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
 
   const handlePost = async () => {
     const trimmed = text.trim();
@@ -61,6 +66,20 @@ function BlogComments({ blogId }) {
     if (!v) return '';
     const d = new Date(v);
     return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const commentDeleteLabel = commentToDelete?.text
+    ? `${commentToDelete.text.slice(0, 60)}${commentToDelete.text.length > 60 ? '...' : ''}`
+    : 'this comment';
+
+  const handleDeleteConfirm = async () => {
+    if (!commentToDelete?.id) return;
+    try {
+      await deleteComment(commentToDelete.id);
+      setCommentToDelete(null);
+    } catch {
+      // error displayed via hook
+    }
   };
 
   return (
@@ -164,19 +183,45 @@ function BlogComments({ blogId }) {
               transition={{ duration: 0.3 }}
               className="rounded-xl border border-slate-800/50 bg-[#0d111e] px-4 py-3"
             >
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-start gap-2 mb-1.5">
                 {/* Avatar initial */}
                 <div className="w-6 h-6 rounded-full bg-violet-600/30 border border-violet-500/30 flex items-center justify-center text-[10px] font-bold text-violet-300 shrink-0">
                   {(c.author_name || 'A')[0].toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold text-slate-300">{c.author_name || 'Anonymous'}</span>
-                <span className="text-[10px] text-slate-600 ml-auto whitespace-nowrap">{formatCommentDate(c.created_at)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-300">{c.author_name || 'Anonymous'}</span>
+                    <span className="text-[10px] text-slate-600 whitespace-nowrap">{formatCommentDate(c.created_at)}</span>
+                  </div>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => setCommentToDelete(c)}
+                    disabled={deletingCommentId === c.id}
+                    className="inline-flex items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingCommentId === c.id ? 'Deleting...' : 'Delete'}
+                  </button>
+                ) : null}
               </div>
               <p className="text-sm text-slate-400 leading-relaxed pl-8">{c.text}</p>
             </motion.div>
           ))}
         </div>
       )}
+
+      <DeleteConfirmModal
+        isOpen={!!commentToDelete}
+        isDeleting={deletingCommentId === commentToDelete?.id}
+        title="Delete Comment"
+        itemName={commentDeleteLabel}
+        onClose={() => {
+          if (deletingCommentId) return;
+          setCommentToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
@@ -184,6 +229,7 @@ function BlogComments({ blogId }) {
 export default function BlogPost() {
   const { id } = useParams();
   const { getBlogById } = useBlogs();
+  const { viewCount } = useBlogView(id);
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -424,6 +470,13 @@ export default function BlogPost() {
                       <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                     </svg>
                     {readTime} min read
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                      <path d="M1.5 8s2.6-4 6.5-4 6.5 4 6.5 4-2.6 4-6.5 4-6.5-4-6.5-4z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
+                    </svg>
+                    {viewCount} views
                   </span>
                 </motion.div>
               </div>

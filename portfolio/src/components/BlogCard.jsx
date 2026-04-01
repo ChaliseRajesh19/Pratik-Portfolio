@@ -6,6 +6,7 @@ function BlogCard({
   excerpt = 'A quick walkthrough of layout rhythm, spacing systems, and type pairings.',
   date = 'Mar 02, 2026',
   readTime = '6 min read',
+  viewCount = 0,
   tags = [],
   category = '',
   featured = false,
@@ -92,6 +93,13 @@ function BlogCard({
               <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
             </svg>
             {readTime}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M1.5 8s2.6-4 6.5-4 6.5 4 6.5 4-2.6 4-6.5 4-6.5-4-6.5-4z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
+            </svg>
+            {viewCount} views
           </span>
         </div>
       </div>

@@ -10,6 +10,7 @@ import {
 import { SectionHeader } from "../components/SectionHeader";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
 import { useSEO } from "../hooks/useSEO";
+import { getPreferredEmailHref, openPreferredEmail } from "../lib/email";
 
 const contactChips = ["fast reply", "global remote", "high polish"];
 
@@ -387,7 +388,11 @@ function Contact({ withTopOffset = true }) {
 
               <div className="grid gap-5" style={{ transform: "translateZ(20px)" }}>
                 <a
-                  href="mailto:mail@creativepratik.com"
+                  href={getPreferredEmailHref()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openPreferredEmail();
+                  }}
                   className="group/item flex flex-col p-5 rounded-2xl border border-blue-900/30 bg-[#020617]/50 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all duration-300"
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 group-hover/item:text-blue-400 transition-colors">

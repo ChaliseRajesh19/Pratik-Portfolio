@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BlogCard from '../components/BlogCard'
 import { useBlogs } from '../hooks/useBlogs'
+import { useBlogViewCounts } from '../hooks/useBlogViews'
 import { useSEO } from '../hooks/useSEO'
 
 export default function Blog({ withTopOffset = true }) {
   const { blogs, loading: isLoading, error } = useBlogs({ onlyPublished: true })
+  const { viewCounts } = useBlogViewCounts()
   const [activeTag, setActiveTag] = React.useState('all')
 
   useSEO({
@@ -178,6 +180,7 @@ export default function Blog({ withTopOffset = true }) {
                       excerpt={buildExcerpt(blog)}
                       date={formatDate(blog.date) || undefined}
                       readTime={estimateReadTime(blog.content)}
+                      viewCount={viewCounts[blog.id] || 0}
                       author={blog.author}
                       category={blog.category}
                       featured={blog.featured}

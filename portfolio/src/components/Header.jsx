@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "./Logo";
 import { hasValidAdminToken } from "../lib/adminAuth";
+import { getPreferredEmailHref, openPreferredEmail } from "../lib/email";
 
 /* ── Nav items ──────────────────────────────────────────────── */
 const NAV_ITEMS = [
@@ -227,7 +228,11 @@ function Header() {
               </NavLink>
             )}
             <motion.a
-              href="mailto:mail@creativepratik.com"
+              href={getPreferredEmailHref()}
+              onClick={(event) => {
+                event.preventDefault();
+                openPreferredEmail();
+              }}
               whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(37,99,235,0.6)" }}
               whileTap={{ scale: 0.97 }}
               className="ml-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative overflow-hidden group border border-blue-500/30"
@@ -414,7 +419,12 @@ function Header() {
                 )}
 
                 <motion.a
-                  href="mailto:mail@creativepratik.com"
+                  href={getPreferredEmailHref()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openPreferredEmail();
+                    setIsMenuOpen(false);
+                  }}
                   whileTap={{ scale: 0.97 }}
                   className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.18em] text-white relative overflow-hidden group"
                   style={{

@@ -9,6 +9,7 @@ export function useComments(blogId) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [error, setError] = useState(null);
 
   const fetchComments = useCallback(async () => {
@@ -57,5 +58,33 @@ export function useComments(blogId) {
     }
   }, [blogId]);
 
-  return { comments, loading, posting, error, postComment, refetch: fetchComments };
+  const deleteComment = useCallback(async (commentId) => {
+    if (!commentId) return;
+    setDeletingCommentId(commentId);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('blog_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+    } catch (err) {
+      setError(err.message || 'Failed to delete comment');
+      throw err;
+    } finally {
+      setDeletingCommentId(null);
+    }
+  }, []);
+
+  return {
+    comments,
+    loading,
+    posting,
+    deletingCommentId,
+    error,
+    postComment,
+    deleteComment,
+    refetch: fetchComments,
+  };
 }
