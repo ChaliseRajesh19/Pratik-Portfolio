@@ -1,0 +1,289 @@
+/* ─────────────────────────────────────────────────────────────
+   Custom Cursor — cursor.css
+   All cursor-related styles, keyframes, and state variants
+───────────────────────────────────────────────────────────── */
+
+/* ── Base layer: hide native cursor everywhere ─────────────── */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+/* ── Cursor root wrapper ────────────────────────────────────── */
+.ccursor-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999999;
+  overflow: hidden;
+}
+
+/* ── Dot (primary cursor) ───────────────────────────────────── */
+.ccursor-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  transition:
+    width 0.18s cubic-bezier(0.23, 1, 0.32, 1),
+    height 0.18s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.25s ease,
+    background-color 0.2s ease;
+  z-index: 2;
+}
+
+/* ── Ring (follower) ────────────────────────────────────────── */
+.ccursor-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.7);
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    width 0.3s cubic-bezier(0.23, 1, 0.32, 1),
+    height 0.3s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    opacity 0.3s ease,
+    border-radius 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  /* 3D perspective for tilt effect */
+  perspective: 600px;
+  transform-style: preserve-3d;
+  backdrop-filter: none;
+  z-index: 1;
+}
+
+/* Inner glow */
+.ccursor-ring::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+/* ── Label inside ring ──────────────────────────────────────── */
+.ccursor-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #f8fafc;
+  white-space: nowrap;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Particles container ────────────────────────────────────── */
+.ccursor-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ccursor-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: particle-fade 0.6s ease-out forwards;
+}
+
+/* ── Ripple element ─────────────────────────────────────────── */
+.ccursor-ripple {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.6);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  animation: ripple-expand 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE VARIANTS
+═══════════════════════════════════════════════════════════════ */
+
+/* ── hover-link ─────────────────────────────────────────────── */
+.ccursor-root[data-state='hover-link'] .ccursor-dot {
+  width: 5px;
+  height: 5px;
+  background: #a5f3fc;
+}
+.ccursor-root[data-state='hover-link'] .ccursor-ring {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(165, 243, 252, 0.85);
+  background: rgba(56, 189, 248, 0.06);
+}
+.ccursor-root[data-state='hover-link'] .ccursor-ring::before {
+  opacity: 1;
+}
+
+/* ── hover-button ───────────────────────────────────────────── */
+.ccursor-root[data-state='hover-button'] .ccursor-dot {
+  width: 10px;
+  height: 10px;
+  background: #c084fc;
+}
+.ccursor-root[data-state='hover-button'] .ccursor-ring {
+  width: 56px;
+  height: 56px;
+  border-color: rgba(192, 132, 252, 0.9);
+  background: rgba(139, 92, 246, 0.12);
+}
+.ccursor-root[data-state='hover-button'] .ccursor-ring::before {
+  background: radial-gradient(circle, rgba(192,132,252,0.14) 0%, transparent 70%);
+  opacity: 1;
+}
+
+/* ── hover-card ─────────────────────────────────────────────── */
+.ccursor-root[data-state='hover-card'] .ccursor-dot {
+  opacity: 0;
+}
+.ccursor-root[data-state='hover-card'] .ccursor-ring {
+  width: 80px;
+  height: 36px;
+  border-radius: 100px;
+  border-color: rgba(56, 189, 248, 0.9);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ccursor-root[data-state='hover-card'] .ccursor-label {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── hover-image ────────────────────────────────────────────── */
+.ccursor-root[data-state='hover-image'] .ccursor-dot {
+  opacity: 0;
+}
+.ccursor-root[data-state='hover-image'] .ccursor-ring {
+  width: 72px;
+  height: 72px;
+  border-color: rgba(251, 191, 36, 0.8);
+  background: rgba(251, 191, 36, 0.07);
+}
+.ccursor-root[data-state='hover-image'] .ccursor-label {
+  opacity: 1;
+  transform: scale(1);
+  color: #fbbf24;
+}
+
+/* ── hover-text ─────────────────────────────────────────────── */
+.ccursor-root[data-state='hover-text'] .ccursor-dot {
+  width: 2px;
+  height: 24px;
+  border-radius: 2px;
+  background: #38bdf8;
+}
+.ccursor-root[data-state='hover-text'] .ccursor-ring {
+  opacity: 0;
+}
+
+/* ── hover-input ─────────────────────────────────────────────── */
+.ccursor-root[data-state='hover-input'] .ccursor-dot {
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: #a78bfa;
+}
+.ccursor-root[data-state='hover-input'] .ccursor-ring {
+  opacity: 0;
+}
+
+/* ── clicking ───────────────────────────────────────────────── */
+.ccursor-root[data-state='clicking'] .ccursor-dot {
+  transform: translate(-50%, -50%) scale(0.6);
+}
+.ccursor-root[data-state='clicking'] .ccursor-ring {
+  transform: translate(-50%, -50%) scale(0.85) !important;
+}
+
+/* ── dragging ───────────────────────────────────────────────── */
+.ccursor-root[data-state='dragging'] .ccursor-dot {
+  background: #fb923c;
+  width: 12px;
+  height: 12px;
+}
+.ccursor-root[data-state='dragging'] .ccursor-ring {
+  border-color: rgba(251, 146, 60, 0.8);
+  width: 60px;
+  height: 60px;
+}
+
+/* ── hidden ─────────────────────────────────────────────────── */
+.ccursor-root[data-state='hidden'] .ccursor-dot,
+.ccursor-root[data-state='hidden'] .ccursor-ring {
+  opacity: 0;
+}
+
+/* ── idle state (auto-hide after inactivity) ────────────────── */
+.ccursor-root.is-idle .ccursor-dot,
+.ccursor-root.is-idle .ccursor-ring {
+  opacity: 0 !important;
+  transition: opacity 0.5s ease !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════════════════════════ */
+
+@keyframes particle-fade {
+  0% {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+}
+
+@keyframes ripple-expand {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+  }
+  100% {
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MIX-BLEND & GLOW UTILITIES
+═══════════════════════════════════════════════════════════════ */
+
+.ccursor-dot-blend {
+  mix-blend-mode: screen;
+}
+
+/* Pulse animation for magnetic elements */
+@keyframes ring-magnetic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(56, 189, 248, 0.3); }
+  50%       { box-shadow: 0 0 0 6px rgba(56, 189, 248, 0); }
+}

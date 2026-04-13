@@ -398,7 +398,7 @@ function Contact({ withTopOffset = true }) {
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 group-hover/item:text-blue-400 transition-colors">
                     Email
                   </span>
-                  <span className="text-sm font-bold text-slate-200 group-hover/item:text-white transition-colors">
+                  <span className="text-sm font-bold text-slate-200 group-hover/item:text-white transition-colors cursor-text select-all" onClick={(e) => e.stopPropagation()}>
                     mail@creativepratik.com
                   </span>
                 </a>
@@ -407,14 +407,14 @@ function Contact({ withTopOffset = true }) {
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
                     Phone
                   </span>
-                  <span className="text-sm font-bold text-slate-200">+977 9762519961</span>
+                  <span className="text-sm font-bold text-slate-200 cursor-text select-all">+977 9762519961</span>
                 </div>
 
                 <div className="flex flex-col p-5 rounded-2xl border border-blue-900/30 bg-[#020617]/50">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
                     Location
                   </span>
-                  <span className="text-sm font-bold text-slate-200">Kapilvastu, Nepal</span>
+                  <span className="text-sm font-bold text-slate-200 cursor-text select-all">Kapilvastu, Nepal</span>
                 </div>
               </div>
             </motion.div>

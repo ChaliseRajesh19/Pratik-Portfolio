@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import React, { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import ServiceCard from "../components/ServiceCard";
+import ServiceModal from "../components/ServiceModal";
 import { SectionHeader } from "../components/SectionHeader";
 import { GridConnections } from "../components/GridConnections";
 import { SectionMotionShell } from "../components/motion/SectionMotionShell";
@@ -19,6 +20,19 @@ const marqueeItems = [
 function Service({ withTopOffset = true }) {
   const { services, loading } = useServices()
   const stageRef = useRef(null);
+  const [selectedService, setSelectedService] = useState(null);
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (selectedService) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedService]);
 
   useSEO({
     title: 'Services — Graphic Design & Video Editing',
@@ -108,29 +122,59 @@ function Service({ withTopOffset = true }) {
           <GridConnections />
 
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10 relative z-10">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 pb-10 relative z-10">
             {loading ? (
-              <div className="col-span-full flex justify-center py-10">
-                <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
-              </div>
+              Array.from({ length: 6 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="min-h-[290px] rounded-[1.8rem] border border-white/[0.03] bg-white/[0.01] p-8 animate-pulse flex flex-col pointer-events-none sticky sm:static"
+                  style={{ top: `calc(80px + ${i * 12}px)`, zIndex: i }}
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] mb-8" />
+                  <div className="h-6 w-1/2 bg-white/[0.04] rounded-lg mb-4" />
+                  <div className="space-y-3 mb-auto mt-2">
+                     <div className="h-3 w-full bg-white/[0.03] rounded-md" />
+                     <div className="h-3 w-5/6 bg-white/[0.03] rounded-md" />
+                     <div className="h-3 w-[70%] bg-white/[0.03] rounded-md" />
+                  </div>
+                  <div className="mt-8 pt-5 border-t border-white/[0.02]">
+                     <div className="h-[2px] w-6 bg-white/[0.04] rounded-full" />
+                  </div>
+                </div>
+              ))
             ) : services.length > 0 ? (
               services.map((service, index) => (
+                <div 
+                  key={service._id} 
+                  className="min-h-[240px] sticky sm:static"
+                  style={{ top: `calc(80px + ${index * 12}px)`, zIndex: index }}
+                >
                   <ServiceCard
-                    key={service._id}
                     index={index}
                     title={service.title}
                     description={service.description}
                     icon={service.imageURL}
+                    onClick={() => setSelectedService({ ...service, icon: service.imageURL })}
                   />
-                ))
+                </div>
+              ))
             ) : (
-              <p className="col-span-full text-center text-slate-400">
+              <p className="col-span-full text-center text-slate-400 py-10">
                 No services currently available.
               </p>
             )}
           </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {selectedService && (
+          <ServiceModal
+            service={selectedService}
+            onClose={() => setSelectedService(null)}
+          />
+        )}
+      </AnimatePresence>
     </SectionMotionShell>
   );
 }

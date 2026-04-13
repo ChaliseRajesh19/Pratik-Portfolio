@@ -52,65 +52,69 @@ export function SectionMotionShell({
   const beamScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.35, 1, 0.45]);
 
   return (
-    <section id={id} ref={ref} className={`relative isolate overflow-hidden ${className}`}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(2,6,23,1))]" />
+    <section id={id} ref={ref} className={`relative isolate overflow-x-clip ${className}`}>
+      {/* Background Decor Layer (with overflow-hidden to prevent body scrolling from flares) */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(2,6,23,1))]" />
 
-      <motion.div
-        aria-hidden="true"
-        className="absolute -left-24 top-16 h-[28rem] w-[28rem] rounded-full blur-[120px]"
-        style={{
-          y: leftAuraY,
-          background: `radial-gradient(circle, ${palette.aura} 0%, transparent 68%)`,
-        }}
-      />
+        <motion.div
+          aria-hidden="true"
+          className="absolute -left-24 top-16 h-[28rem] w-[28rem] rounded-full blur-[120px]"
+          style={{
+            y: leftAuraY,
+            background: `radial-gradient(circle, ${palette.aura} 0%, transparent 68%)`,
+          }}
+        />
 
-      <motion.div
-        aria-hidden="true"
-        className="absolute -right-28 bottom-0 h-[34rem] w-[34rem] rounded-full blur-[140px]"
-        style={{
-          x: rightAuraX,
-          y: rightAuraY,
-          background: `radial-gradient(circle, ${palette.auraSecondary} 0%, transparent 70%)`,
-        }}
-      />
+        <motion.div
+          aria-hidden="true"
+          className="absolute -right-28 bottom-0 h-[34rem] w-[34rem] rounded-full blur-[140px]"
+          style={{
+            x: rightAuraX,
+            y: rightAuraY,
+            background: `radial-gradient(circle, ${palette.auraSecondary} 0%, transparent 70%)`,
+          }}
+        />
 
-      <motion.div
-        aria-hidden="true"
-        className="section-grid absolute inset-0 opacity-60"
-        style={{
-          y: gridY,
-          backgroundImage: `linear-gradient(${palette.grid} 1px, transparent 1px), linear-gradient(90deg, ${palette.grid} 1px, transparent 1px)`,
-          backgroundSize: "140px 140px",
-          maskImage:
-            "radial-gradient(circle at center, rgba(0,0,0,1), rgba(0,0,0,0.15) 72%, transparent 100%)",
-        }}
-      />
+        <motion.div
+          aria-hidden="true"
+          className="section-grid absolute inset-0 opacity-60"
+          style={{
+            y: gridY,
+            backgroundImage: `linear-gradient(${palette.grid} 1px, transparent 1px), linear-gradient(90deg, ${palette.grid} 1px, transparent 1px)`,
+            backgroundSize: "140px 140px",
+            maskImage:
+              "radial-gradient(circle at center, rgba(0,0,0,1), rgba(0,0,0,0.15) 72%, transparent 100%)",
+          }}
+        />
 
-      <div className="section-noise absolute inset-0 opacity-30" aria-hidden="true" />
+        <div className="section-noise absolute inset-0 opacity-30" aria-hidden="true" />
 
-      {ghostLabel ? (
-        <div className="pointer-events-none absolute inset-x-0 top-8 flex justify-center overflow-visible md:top-6">
-          <motion.div
-            aria-hidden="true"
-            className="whitespace-nowrap px-4 text-center text-[18vw] font-black uppercase tracking-[0.16em] text-white/[0.03] md:text-[10rem] md:tracking-[0.24em]"
-            style={{ x: ghostX, rotate: ghostRotate }}
-          >
-            {ghostLabel}
-          </motion.div>
-        </div>
-      ) : null}
+        {ghostLabel ? (
+          <div className="absolute inset-x-0 top-8 flex justify-center md:top-6">
+            <motion.div
+              aria-hidden="true"
+              className="whitespace-nowrap px-4 text-center text-[18vw] font-black uppercase tracking-[0.16em] text-white/[0.03] md:text-[10rem] md:tracking-[0.24em]"
+              style={{ x: ghostX, rotate: ghostRotate }}
+            >
+              {ghostLabel}
+            </motion.div>
+          </div>
+        ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
 
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-[10%] right-[10%] top-0 h-px"
-        style={{
-          scaleX: beamScale,
-          background: `linear-gradient(90deg, transparent, ${palette.beam}, transparent)`,
-        }}
-      />
+        <motion.div
+          aria-hidden="true"
+          className="absolute left-[10%] right-[10%] top-0 h-px"
+          style={{
+            scaleX: beamScale,
+            background: `linear-gradient(90deg, transparent, ${palette.beam}, transparent)`,
+          }}
+        />
+      </div>
 
+      {/* Interactive Content Layer (freed from overflow-hidden) */}
       <div className="relative z-10">{children}</div>
     </section>
   );

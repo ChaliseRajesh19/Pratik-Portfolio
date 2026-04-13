@@ -15,14 +15,33 @@
 /* Ensure R3F canvases never steal pointer events from HTML above */
 canvas.r3f-bg { pointer-events: none; }
 
-/* Enforce pointer cursor globally for interactive elements */
-button, a, select, [role="button"] {
+/* ── Bulletproof UI Cursors & Selection ── */
+/* Prevent browser's automatic 'I-beam' on text everywhere and block highlighting */
+html {
+	cursor: default;
+	-webkit-user-select: none;
+	user-select: none;
+}
+*, *::before, *::after {
+	cursor: inherit;
+}
+
+/* Explicitly restore interactive cursors */
+button, a, select, [role="button"], .cursor-pointer {
 	cursor: pointer !important;
+}
+
+/* Explicitly restore text inputs (cursor and selectability) */
+input, textarea, .blog-editor-shell *, .ck-editor__editable *, .cursor-text {
+	cursor: text !important;
+	-webkit-user-select: auto !important;
+	user-select: auto !important;
 }
 
 html {
 	scroll-behavior: smooth;
 	scroll-padding-top: 4.5rem;
+	overflow-x: clip;
 }
 
 body {
@@ -31,7 +50,14 @@ body {
 		radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.08), transparent 22%),
 		var(--portfolio-bg);
 	color: var(--portfolio-text);
-	overflow-x: hidden;
+	overflow-x: clip;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+input, textarea, select, .blog-editor-shell, .ck-editor__editable {
+	-webkit-user-select: auto;
+	user-select: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
