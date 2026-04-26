@@ -15,6 +15,27 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
 
   const parsedImages = images.map((img) => img || "");
   const headline = work.headline || work.title || "Portfolio Image";
+  const totalImages = parsedImages.length;
+  const selectedImageIndex =
+    selectedMedia?.type === "image"
+      ? typeof selectedMedia.index === "number"
+        ? selectedMedia.index
+        : parsedImages.findIndex((img) => img === selectedMedia.url)
+      : -1;
+
+  const openImageAt = (index) => {
+    const nextIndex = Math.max(0, Math.min(index, totalImages - 1));
+    const nextUrl = parsedImages[nextIndex];
+    if (!nextUrl) return;
+    setSelectedMedia({ type: "image", url: nextUrl, index: nextIndex });
+  };
+
+  const goToAdjacentImage = (direction) => {
+    if (selectedImageIndex < 0 || totalImages <= 1) return;
+    const nextIndex = selectedImageIndex + direction;
+    if (nextIndex < 0 || nextIndex >= totalImages) return;
+    openImageAt(nextIndex);
+  };
 
   // Helper to convert YT/Vimeo to embed
   const getEmbedUrl = (url) => {
@@ -27,13 +48,34 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
   };
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape" && !selectedMedia) onClose();
       if (e.key === "Escape" && selectedMedia) setSelectedMedia(null);
+      if (selectedMedia?.type === "image" && e.key === "ArrowLeft") {
+        e.preventDefault();
+        goToAdjacentImage(-1);
+      }
+      if (selectedMedia?.type === "image" && e.key === "ArrowRight") {
+        e.preventDefault();
+        goToAdjacentImage(1);
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [onClose, selectedMedia]);
+  }, [goToAdjacentImage, onClose, selectedMedia]);
 
   return (
     <AnimatePresence>
@@ -41,10 +83,9 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[999] bg-[#0d131f] flex flex-col"
+        className="fixed inset-0 z-[999] overflow-y-auto bg-[#0d131f] flex flex-col"
       >
-        <div className="max-w-6xl w-full mx-auto px-4 py-8 md:py-12 md:px-8 flex-1 text-left relative overflow-y-auto">
-          {/* Breadcrumbs */}
+        <div className="max-w-6xl w-full mx-auto px-4 py-8 md:py-12 md:px-8 text-left relative">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-10 text-xs text-slate-500 font-medium">
             <button onClick={onClose} className="transition-colors hover:text-cyan-400">Home</button>
             <span className="opacity-50">›</span>
@@ -54,7 +95,18 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
             <span className="opacity-50">›</span>
             <span className="text-slate-300 truncate max-w-[150px] sm:max-w-[300px]">{headline}</span>
           </nav>
+          <nav aria-hidden="true" className="hidden">
 
+            <span className="opacity-50">›</span>
+            <Link to="/portfolio" onClick={onClose} className="transition-colors hover:text-cyan-400">Portfolio</Link>
+            <span className="opacity-50">›</span>
+            <span className="text-slate-400">{categoryDisplayName}</span>
+            <span className="opacity-50">›</span>
+            <span className="text-slate-300 truncate max-w-[150px] sm:max-w-[300px]">{headline}</span>
+          </nav>
+        </div>
+
+        <div className="max-w-6xl w-full mx-auto px-4 py-8 md:py-12 md:px-8 text-left relative">
           <div className="mb-8">
             <div className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold tracking-widest uppercase mb-4">
               {work.category}
@@ -72,7 +124,7 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
               <div
                 key={idx}
                 className="group relative rounded-2xl overflow-hidden bg-slate-900 aspect-square cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-300 shadow-lg"
-                onClick={() => setSelectedMedia({ type: 'image', url: src })}
+                onClick={() => openImageAt(idx)}
               >
                 <img
                   src={src}
@@ -124,9 +176,13 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
               className="fixed inset-0 z-[1000] flex flex-col p-4 md:p-8 overflow-hidden bg-[#0d131f]/80"
             >
               {/* Dynamic Blurred Glass Backdrop */}
-              {parsedImages[0] && (
+              {(selectedMedia.type === "image" ? selectedMedia.url : parsedImages[0]) && (
                 <div className="absolute inset-0 z-0 pointer-events-none">
-                  <img src={parsedImages[0]} alt="backdrop" className="w-full h-full object-cover opacity-40 blur-[80px] scale-125 saturate-[1.5]" />
+                  <img
+                    src={selectedMedia.type === "image" ? selectedMedia.url : parsedImages[0]}
+                    alt="backdrop"
+                    className="w-full h-full object-cover opacity-40 blur-[80px] scale-125 saturate-[1.5]"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent"></div>
                 </div>
               )}
@@ -155,39 +211,112 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
               </button>
 
               <div
-                className="flex-1 min-h-0 relative flex items-center justify-center w-full max-w-7xl mx-auto px-4 md:px-12"
+                className="flex-1 min-h-0 relative flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 md:px-12"
                 onClick={(e) => e.stopPropagation()}
               >
-                <AnimatePresence mode="wait">
-                  {selectedMedia.type === 'video' ? (
-                    <motion.div
-                      key={selectedMedia.url}
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.95, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      className="h-[80vh] min-h-[400px] max-h-full max-w-full aspect-[9/16] rounded-[24px] overflow-hidden shadow-[0_0_80px_-15px_rgba(168,85,247,0.3)] bg-black shrink-0 relative"
-                    >
-                      <iframe 
-                        src={getEmbedUrl(selectedMedia.url)} 
-                        className="w-full h-full"
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    </motion.div>
-                  ) : (
-                    <motion.img
-                      key={selectedMedia.url}
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.95, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      src={selectedMedia.url}
-                      alt="Fullscreen View"
-                      className="max-w-full max-h-full object-contain drop-shadow-2xl"
-                    />
-                  )}
-                </AnimatePresence>
+                <div className="relative flex-1 min-h-0 w-full flex items-center justify-center">
+                  {selectedMedia.type === "image" && totalImages > 1 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => goToAdjacentImage(-1)}
+                        disabled={selectedImageIndex <= 0}
+                        className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white backdrop-blur-md transition disabled:cursor-not-allowed disabled:opacity-35 hover:bg-white/20"
+                        aria-label="Previous image"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goToAdjacentImage(1)}
+                        disabled={selectedImageIndex >= totalImages - 1}
+                        className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white backdrop-blur-md transition disabled:cursor-not-allowed disabled:opacity-35 hover:bg-white/20"
+                        aria-label="Next image"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </>
+                  ) : null}
+
+                  <AnimatePresence mode="wait">
+                    {selectedMedia.type === 'video' ? (
+                      <motion.div
+                        key={selectedMedia.url}
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="h-[80vh] min-h-[400px] max-h-full max-w-full aspect-[9/16] rounded-[24px] overflow-hidden shadow-[0_0_80px_-15px_rgba(168,85,247,0.3)] bg-black shrink-0 relative"
+                      >
+                        <iframe 
+                          src={getEmbedUrl(selectedMedia.url)} 
+                          className="w-full h-full"
+                          allow="autoplay; fullscreen; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </motion.div>
+                    ) : (
+                      <motion.img
+                        key={selectedMedia.url}
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        src={selectedMedia.url}
+                        alt={`Fullscreen view ${selectedImageIndex + 1}`}
+                        className="max-w-full max-h-full object-contain drop-shadow-2xl"
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {selectedMedia.type === "image" && totalImages > 0 ? (
+                  <div className="relative z-20 mt-5 w-full max-w-4xl">
+                    <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                      <span className="text-xs font-medium tracking-[0.24em] text-slate-400 uppercase">
+                        {selectedImageIndex + 1} / {totalImages}
+                      </span>
+                      {totalImages > 1 ? (
+                        <span className="hidden md:inline text-xs text-slate-400">
+                          Use keyboard left and right arrows to navigate
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {parsedImages.map((src, idx) => {
+                        const isActive = idx === selectedImageIndex;
+                        return (
+                          <button
+                            key={`${src}-${idx}`}
+                            type="button"
+                            onClick={() => openImageAt(idx)}
+                            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border transition-all duration-200 sm:h-[72px] sm:w-[72px] ${
+                              isActive
+                                ? "border-violet-400 ring-2 ring-violet-400/40"
+                                : "border-white/10 hover:border-white/30"
+                            }`}
+                            aria-label={`View image ${idx + 1}`}
+                            aria-pressed={isActive}
+                          >
+                            <img
+                              src={src}
+                              alt={`${headline} thumbnail ${idx + 1}`}
+                              className={`h-full w-full object-cover transition duration-200 ${
+                                isActive ? "scale-100 opacity-100" : "scale-[1.02] opacity-75 hover:opacity-100"
+                              }`}
+                            />
+                            <span className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent"></span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </motion.div>
           )}
@@ -278,7 +407,7 @@ function WorkPages() {
 
   return (
     <div
-      className="min-h-screen pt-24 pb-16 relative"
+      className="min-h-screen pt-28 md:pt-32 pb-16 relative"
       style={{
         width: "100%",
         background: "#020617",
@@ -288,7 +417,7 @@ function WorkPages() {
     >
       <nav
         aria-label="Breadcrumb"
-        className="relative z-10 flex items-center gap-2 px-6 pt-4 mb-4 text-xs text-slate-500"
+        className="relative z-10 flex items-center gap-2 px-6 mb-6 text-xs text-slate-500"
       >
         <Link to="/" className="transition-colors hover:text-violet-400">
           Home
@@ -301,13 +430,13 @@ function WorkPages() {
         <span className="text-slate-400">{displayName}</span>
       </nav>
 
-      <div className="max-w-[1600px] mx-auto px-6 pt-2">
-        <div className="mb-10">
-          <h1 className="text-4xl font-black text-slate-100 sm:text-5xl lg:text-6xl tracking-tight mb-2">
+      <div className="max-w-[1600px] mx-auto px-6">
+        <div className="mb-12">
+          <h1 className="text-4xl font-black text-slate-100 sm:text-5xl lg:text-6xl tracking-tight mb-3">
             {displayName}
           </h1>
           {displayDesc ? (
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-500/80 font-bold max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.28em] text-cyan-500/80 font-bold max-w-3xl">
               {displayDesc}
             </p>
           ) : null}
