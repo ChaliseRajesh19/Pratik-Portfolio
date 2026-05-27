@@ -326,6 +326,222 @@ function WorkDetailsModal({ work, categoryDisplayName, onClose }) {
   );
 }
 
+function DirectImageLightbox({ item, images, categoryDisplayName, onClose, onSelect }) {
+  const currentIndex = images.findIndex((image) => image.id === item.id);
+  const headline = item.work.headline || item.work.title || "Portfolio Image";
+  const categoryLabel = categoryDisplayName || item.work.category;
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext = currentIndex >= 0 && currentIndex < images.length - 1;
+
+  const goToImage = React.useCallback(
+    (nextIndex) => {
+      if (nextIndex < 0 || nextIndex >= images.length) return;
+      onSelect(images[nextIndex]);
+    },
+    [images, onSelect]
+  );
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        goToImage(currentIndex - 1);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        goToImage(currentIndex + 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, goToImage, onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[999] flex flex-col overflow-hidden bg-[#020617]/95 p-4 md:p-8"
+      >
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src={item.imageUrl}
+            alt=""
+            className="h-full w-full scale-125 object-cover opacity-25 blur-[80px] saturate-150"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/70 to-[#020617]/30" />
+        </div>
+
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.26em] text-cyan-300">
+              {categoryLabel}
+            </p>
+            {headline ? (
+              <h2 className="mt-2 max-w-3xl text-lg font-bold text-white md:text-2xl">
+                {headline}
+              </h2>
+            ) : null}
+            <p className="mt-2 text-xs text-slate-400">
+              {currentIndex + 1} / {images.length}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+            aria-label="Close image"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          className="relative z-10 flex min-h-0 flex-1 items-center justify-center py-5 md:px-16"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => goToImage(currentIndex - 1)}
+            disabled={!canGoPrevious}
+            className="hidden md:flex absolute left-0 top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous image"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              src={item.imageUrl}
+              alt={headline}
+              className="max-h-full max-w-full object-contain drop-shadow-2xl"
+            />
+          </AnimatePresence>
+
+          <button
+            type="button"
+            onClick={() => goToImage(currentIndex + 1)}
+            disabled={!canGoNext}
+            className="hidden md:flex absolute right-0 top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next image"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {images.length > 1 && (
+          <div className="relative z-10 mx-auto flex max-w-5xl gap-3 overflow-x-auto pb-1">
+            {images.map((image, index) => {
+              const isActive = image.id === item.id;
+              const imageHeadline = image.work.headline || image.work.title || `Image ${index + 1}`;
+
+              return (
+                <button
+                  key={image.id}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelect(image);
+                  }}
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition sm:h-[72px] sm:w-[72px] ${
+                    isActive
+                      ? "border-cyan-300 ring-2 ring-cyan-300/35"
+                      : "border-white/10 opacity-70 hover:border-white/30 hover:opacity-100"
+                  }`}
+                  aria-label={`View ${imageHeadline}`}
+                  aria-pressed={isActive}
+                >
+                  <img src={image.imageUrl} alt={imageHeadline} className="h-full w-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// Individual image tile for a category gallery.
+function FlatImageCard({ item, index, onClick, searchQuery }) {
+  const [hovered, setHovered] = useState(false);
+  const headline = item.work.headline || item.work.title;
+
+  const isMatch = searchQuery && headline && headline.toLowerCase().includes(searchQuery.toLowerCase());
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.08 }}
+      transition={{ duration: 0.35, delay: (index % 12) * 0.03 }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="cursor-pointer"
+      style={{ transform: hovered ? "translateY(-4px)" : "none", transition: "transform .22s ease" }}
+    >
+      <div className={`overflow-hidden rounded-[20px] border transition-all duration-300 ${
+        isMatch
+          ? 'border-purple-500/60 shadow-[0_0_30px_rgba(168,85,247,0.2)]'
+          : 'border-slate-800/60 hover:border-purple-500/40'
+      } bg-[#0c1525] hover:shadow-[0_14px_40px_rgba(0,0,0,0.4)]`}>
+        <div className="relative aspect-square overflow-hidden bg-slate-900">
+          <img
+            src={item.imageUrl}
+            alt={headline ? `${headline} - Image ${item.imageIndex + 1}` : `Portfolio Image ${item.imageIndex + 1}`}
+            className="w-full h-full object-cover transition-transform duration-500"
+            style={{ transform: hovered ? "scale(1.06)" : "scale(1)" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="absolute top-3 left-3 rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-slate-100 backdrop-blur-md">
+            {item.work.category}
+          </div>
+          {isMatch && (
+            <div className="absolute right-3 top-3 rounded-full bg-purple-500/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-purple-100 backdrop-blur-md">
+              Match
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Keep the old WorkCard for backward compatibility if needed
 function WorkCard({ work, index, onClick }) {
   const [hovered, setHovered] = useState(false);
   const src = work.imageURL;
@@ -353,7 +569,7 @@ function WorkCard({ work, index, onClick }) {
             style={{ transform: hovered ? "scale(1.04)" : "scale(1)" }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-85" />
-          
+
           {work.videoURL && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-300">
@@ -386,6 +602,8 @@ function WorkPages() {
   const { categories } = useCategories();
   const { works, loading } = useWorks({ category });
   const [selected, setSelected] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const orderedWorks = React.useMemo(() => {
     return [...works].sort((left, right) => {
       const orderDelta = (left.displayOrder || 0) - (right.displayOrder || 0);
@@ -393,6 +611,47 @@ function WorkPages() {
       return new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime();
     });
   }, [works]);
+
+  // Flatten all images from all works into a single array
+  const flattenedImages = React.useMemo(() => {
+    const images = [];
+    orderedWorks.forEach(work => {
+      const workImages = work.galleryImages && work.galleryImages.length > 0
+        ? [work.imageURL, ...work.galleryImages]
+        : [work.imageURL];
+
+      workImages.forEach((imageUrl, imgIndex) => {
+        if (imageUrl) {
+          images.push({
+            id: `${work._id}-${imgIndex}`,
+            imageUrl,
+            work,
+            imageIndex: imgIndex,
+            totalImagesInWork: workImages.length
+          });
+        }
+      });
+    });
+    return images;
+  }, [orderedWorks]);
+
+  // Filter images based on search query
+  const filteredImages = React.useMemo(() => {
+    if (!searchQuery.trim()) return flattenedImages;
+
+    const query = searchQuery.toLowerCase().trim();
+    return flattenedImages.filter(item => {
+      const headline = item.work.headline || '';
+      const title = item.work.title || '';
+      const workCategory = item.work.category || '';
+
+      return (
+        headline.toLowerCase().includes(query) ||
+        title.toLowerCase().includes(query) ||
+        workCategory.toLowerCase().includes(query)
+      );
+    });
+  }, [flattenedImages, searchQuery]);
 
   const categoryInfo = categories.find(c => c.slug === category) || null;
   const displayName = categoryInfo?.name || category;
@@ -432,14 +691,70 @@ function WorkPages() {
 
       <div className="max-w-[1600px] mx-auto px-6">
         <div className="mb-12">
-          <h1 className="text-4xl font-black text-slate-100 sm:text-5xl lg:text-6xl tracking-tight mb-3">
-            {displayName}
-          </h1>
-          {displayDesc ? (
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-500/80 font-bold max-w-3xl">
-              {displayDesc}
-            </p>
-          ) : null}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
+            <div>
+              <h1 className="text-4xl font-black text-slate-100 sm:text-5xl lg:text-6xl tracking-tight mb-3">
+                {displayName}
+              </h1>
+              {displayDesc ? (
+                <p className="text-xs uppercase tracking-[0.28em] text-cyan-500/80 font-bold max-w-3xl">
+                  {displayDesc}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Search Box */}
+            <div className="relative lg:min-w-[320px]">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-slate-500"
+                >
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search images..."
+                className="w-full rounded-2xl border border-slate-700/80 bg-slate-900/60 backdrop-blur-md pl-12 pr-4 py-3.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition-all duration-300 focus:border-purple-500/60 focus:bg-slate-900/80 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-slate-800/60 transition-colors text-slate-400 hover:text-slate-200"
+                  aria-label="Clear search"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search results counter */}
+          {searchQuery && (
+            <div className="mb-6 text-sm text-slate-400">
+              {filteredImages.length === 0 ? (
+                <span>No results found for "{searchQuery}"</span>
+              ) : (
+                <span>
+                  Found {filteredImages.length} image{filteredImages.length !== 1 ? 's' : ''} matching "{searchQuery}"
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {loading && (
@@ -464,7 +779,7 @@ function WorkPages() {
           </div>
         )}
 
-        {!loading && orderedWorks.length === 0 && (
+        {!loading && flattenedImages.length === 0 && (
           <div style={{ textAlign: "center", padding: "70px 0" }}>
             <p style={{ color: "#475569", fontSize: 14 }}>
               No images in this category yet.
@@ -472,14 +787,30 @@ function WorkPages() {
           </div>
         )}
 
-        {!loading && orderedWorks.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {orderedWorks.map((work, i) => (
-              <WorkCard
-                key={work._id || i}
-                work={work}
+        {!loading && flattenedImages.length > 0 && filteredImages.length === 0 && searchQuery && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4 opacity-40">🔍</div>
+            <p className="text-slate-400 text-lg mb-2">No images found</p>
+            <p className="text-slate-500 text-sm">Try a different search term or{' '}
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-purple-400 hover:text-purple-300 underline"
+              >
+                clear the search
+              </button>
+            </p>
+          </div>
+        )}
+
+        {!loading && filteredImages.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredImages.map((item, i) => (
+              <FlatImageCard
+                key={item.id}
+                item={item}
                 index={i}
-                onClick={() => setSelected(work)}
+                onClick={() => setSelected(item)}
+                searchQuery={searchQuery}
               />
             ))}
           </div>
@@ -487,7 +818,13 @@ function WorkPages() {
       </div>
 
       {selected && (
-        <WorkDetailsModal work={selected} categoryDisplayName={displayName} onClose={() => setSelected(null)} />
+        <DirectImageLightbox
+          item={selected}
+          images={filteredImages}
+          categoryDisplayName={displayName}
+          onClose={() => setSelected(null)}
+          onSelect={setSelected}
+        />
       )}
     </div>
   );

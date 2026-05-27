@@ -103,23 +103,10 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
     setImageItems([]);
   }, [initialWork, defaultCategory, categories]);
 
-  const replaceCoverImage = (file) => {
-    if (!file) return;
-
-    const nextCover = createFileImageItem(file, 'cover');
-    setImageItems((previousItems) => {
-      if (previousItems.length === 0) {
-        return [nextCover];
-      }
-
-      return [nextCover, ...previousItems.slice(1)];
-    });
-  };
-
   const appendGalleryImages = (files) => {
     if (!files?.length) return;
 
-    const nextItems = Array.from(files).map((file) => createFileImageItem(file, 'gallery'));
+    const nextItems = Array.from(files).map((file) => createFileImageItem(file, 'image'));
     setImageItems((previousItems) => [...previousItems, ...nextItems]);
   };
 
@@ -139,18 +126,6 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
       const nextItems = [...previousItems];
       const [movedItem] = nextItems.splice(currentIndex, 1);
       nextItems.splice(targetIndex, 0, movedItem);
-      return nextItems;
-    });
-  };
-
-  const makeCoverImage = (id) => {
-    setImageItems((previousItems) => {
-      const currentIndex = previousItems.findIndex((item) => item.id === id);
-      if (currentIndex <= 0) return previousItems;
-
-      const nextItems = [...previousItems];
-      const [selectedItem] = nextItems.splice(currentIndex, 1);
-      nextItems.unshift(selectedItem);
       return nextItems;
     });
   };
@@ -260,75 +235,41 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
           <p className="mt-2 text-[11px] text-slate-500 italic">Optional video link. It still appears after the ordered image gallery on the public page.</p>
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col">
-            <span className="block text-sm font-medium text-slate-300 mb-2">Cover Image</span>
-            <label className="relative rounded-2xl border border-dashed border-slate-700/80 bg-slate-950/40 flex flex-col items-center justify-center text-center overflow-hidden group min-h-[180px] cursor-pointer hover:border-purple-500/50 transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  replaceCoverImage(file);
-                  event.target.value = '';
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
+        <div className="flex flex-col">
+          <span className="block text-sm font-medium text-slate-300 mb-2">Images</span>
+          <label className="relative rounded-2xl border border-dashed border-slate-700/80 bg-slate-950/40 p-6 flex flex-col items-center justify-center text-center overflow-hidden group min-h-[190px] hover:border-purple-500/50 transition-colors cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => {
+                appendGalleryImages(event.target.files);
+                event.target.value = '';
+              }}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
 
-              {imageItems[0]?.url ? (
-                <img src={imageItems[0].url} className="absolute inset-0 w-full h-full object-cover opacity-55 group-hover:opacity-75 transition-opacity" alt="Cover preview" />
-              ) : null}
-
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/30 transition-colors relative z-20">
+            <div className="flex flex-col items-center pointer-events-none relative z-20">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/30 transition-colors">
                 <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" height="20" width="20">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                   <circle cx="8.5" cy="8.5" r="1.5"></circle>
                   <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
               </div>
-              <div className="text-sm font-semibold text-slate-200 relative z-20">
-                {imageItems[0]?.url ? 'Replace Cover Image' : 'Upload Cover Image'}
+              <div className="text-sm font-semibold text-slate-200">
+                {imageItems.length > 0 ? `${imageItems.length} image${imageItems.length > 1 ? 's' : ''} selected` : 'Upload Images'}
               </div>
-            </label>
-            <p className="mt-2 text-[11px] text-slate-500 italic">The first image becomes the card cover automatically. You can also drag any image below into the first position.</p>
-          </div>
-
-          <div className="flex flex-col">
-            <span className="block text-sm font-medium text-slate-300 mb-2">Additional Images</span>
-            <label className="relative rounded-2xl border border-dashed border-slate-700/80 bg-slate-950/40 p-6 flex flex-col items-center justify-center text-center overflow-hidden group min-h-[180px] hover:border-purple-500/50 transition-colors cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(event) => {
-                  appendGalleryImages(event.target.files);
-                  event.target.value = '';
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-
-              <div className="flex flex-col items-center pointer-events-none relative z-20">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/30 transition-colors">
-                  <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" height="20" width="20">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
-                </div>
-                <div className="text-sm font-semibold text-slate-200">
-                  {imageItems.length > 1 ? `${imageItems.length - 1} extra image${imageItems.length - 1 > 1 ? 's' : ''}` : 'Upload More Images'}
-                </div>
-              </div>
-            </label>
-            <p className="mt-2 text-[11px] text-slate-500 italic">These will appear after the cover image, following the exact order you arrange below.</p>
-          </div>
+            </div>
+          </label>
+          <p className="mt-2 text-[11px] text-slate-500 italic">Upload all images together, then drag them below into the exact order you want on the public page.</p>
         </div>
 
         {imageItems.length > 0 && (
           <div>
             <div className="flex flex-col gap-2 mb-3">
               <p className="text-sm font-medium text-slate-300">Gallery Display Order</p>
-              <p className="text-[11px] text-slate-500 italic">Drag images to reorder them. The first tile is the cover used on the portfolio grid.</p>
+              <p className="text-[11px] text-slate-500 italic">Drag images to reorder them. This same order appears on the public portfolio page.</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -365,19 +306,10 @@ function UploadForm({ categories, defaultCategory, onUploaded, initialWork, onCa
                   } ${draggingId === item.id ? 'opacity-60 scale-[0.98]' : ''}`}
                 >
                   <div className="absolute left-2 top-2 z-20 rounded-full bg-black/65 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
-                    {index === 0 ? 'Cover' : `#${index + 1}`}
+                    #{index + 1}
                   </div>
 
                   <div className="absolute right-2 top-2 z-20 flex gap-1">
-                    {index !== 0 && (
-                      <button
-                        type="button"
-                        onClick={() => makeCoverImage(item.id)}
-                        className="rounded-full bg-emerald-500/85 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-emerald-400"
-                      >
-                        Make Cover
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => removeImageItem(item.id)}

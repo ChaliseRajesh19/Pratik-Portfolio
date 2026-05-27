@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaGithub, FaInstagram, FaLinkedin, FaTwitter, FaFacebook } from 'react-icons/fa';
+import { FaGithub, FaInstagram, FaLinkedin, FaTwitter, FaFacebook, FaTiktok } from 'react-icons/fa';
 import { getPreferredEmailHref, openPreferredEmail } from '../lib/email';
 
 const Footer = () => {
@@ -31,6 +31,7 @@ const Footer = () => {
               { Icon: FaLinkedin, href: 'https://linkedin.com/in/creativepratik22/' },
               { Icon: FaInstagram, href: 'https://instagram.com/creativepratik22' },
               { Icon: FaTwitter, href: 'https://x.com/creativepratik_' },
+              { Icon: FaTiktok, href: "https://www.tiktok.com/@creativepratik?_r=1&_t=ZS-96hmLwWWNJH"}
             ].map((social, i) => (
               <a
                 key={i}
