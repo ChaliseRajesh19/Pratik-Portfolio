@@ -7,6 +7,7 @@ import ServiceForm from '../components/admin/ServiceForm'
 import ServiceList from '../components/admin/ServiceList'
 import CategoryForm from '../components/admin/CategoryForm'
 import CategoryList from '../components/admin/CategoryList'
+import CategoryFilterSettings from '../components/admin/CategoryFilterSettings'
 import TestimonialList from '../components/admin/TestimonialList'
 import { useNavigate, Link } from 'react-router-dom'
 import logoimg from '../assets/favicon.png'
@@ -65,6 +66,7 @@ const NAV = [
     subs: [
       { id: 'list',               label: 'Manage Works' },
       { id: 'categories-list',    label: 'Manage Categories' },
+      { id: 'filter-settings',    label: 'Filter Settings' },
     ],
   },
   {
@@ -297,6 +299,7 @@ const TITLES = {
   list:               { title: 'Manage Works',      sub: 'Review and delete your portfolio uploads.' },
   'services-list':    { title: 'Manage Services',   sub: 'Review and remove existing services.' },
   'categories-list':  { title: 'Manage Categories', sub: 'Review active portfolio categories.' },
+  'filter-settings':  { title: 'Filter Settings',   sub: 'Choose where public portfolio filters are visible.' },
   'blog-list':        { title: 'Manage Blogs',      sub: 'Edit and manage your blog posts.' },
   'testimonials-list':{ title: 'Manage Testimonials', sub: 'Add and manage homepage testimonials.' },
 }
@@ -366,6 +369,10 @@ function AdminDashboard() {
 
           {view === 'categories-list' && (
             <CategoryList refreshKey={categoryRefreshKey} />
+          )}
+
+          {view === 'filter-settings' && (
+            <CategoryFilterSettings refreshKey={categoryRefreshKey} />
           )}
 
           {view === 'blog-list' && (

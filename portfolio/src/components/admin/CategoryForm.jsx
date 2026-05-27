@@ -14,6 +14,7 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
   const [description, setDescription] = React.useState('');
   const [icon, setIcon] = React.useState('🎨');
   const [displayOrder, setDisplayOrder] = React.useState(0);
+  const [showFilter, setShowFilter] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -23,6 +24,7 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
       setDescription(initialCategory.description || '');
       setIcon(initialCategory.icon || '🎨');
       setDisplayOrder(initialCategory.displayOrder || 0);
+      setShowFilter(initialCategory.showFilter !== false);
       return;
     }
 
@@ -31,6 +33,7 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
     setDescription('');
     setIcon('🎨');
     setDisplayOrder(0);
+    setShowFilter(true);
   }, [initialCategory]);
 
   const handleSubmit = async (event) => {
@@ -50,6 +53,7 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
         description: description.trim(),
         icon,
         displayOrder: Number.isFinite(Number(displayOrder)) ? Number(displayOrder) : 0,
+        showFilter,
       };
 
       if (initialCategory) {
@@ -63,6 +67,7 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
         setDescription('');
         setIcon('🎨');
         setDisplayOrder(0);
+        setShowFilter(true);
       }
 
       if (onCreated) onCreated();
@@ -152,6 +157,19 @@ function CategoryForm({ onCreated, initialCategory, onCancel }) {
             className="mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none ring-emerald-400/50 transition focus:border-emerald-400/70 focus:ring"
           />
           <p className="mt-2 text-[11px] text-slate-500 italic">Lower numbers appear first in the portfolio categories list.</p>
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-700/80 bg-slate-950/60 px-4 py-4 text-sm text-slate-300">
+          <span>
+            <span className="block font-semibold text-slate-100">Show public image filter</span>
+            <span className="mt-1 block text-xs text-slate-500">Display the title filter dropdown on this category page.</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={showFilter}
+            onChange={(event) => setShowFilter(event.target.checked)}
+            className="h-5 w-5 accent-emerald-400"
+          />
         </label>
 
         <label className="block text-sm font-medium text-slate-300">

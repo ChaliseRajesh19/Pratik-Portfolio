@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { getSupportedColumns } from '../lib/supabaseColumns';
 
+const DEFAULT_CATEGORY_ICON = '🎨';
+
 function formatCategory(row) {
   if (!row) return null;
 
@@ -12,6 +14,7 @@ function formatCategory(row) {
     slug: row.slug,
     description: row.description,
     icon: row.icon,
+    showFilter: row.show_filter !== false,
     displayOrder: Number.isFinite(Number(row.display_order)) ? Number(row.display_order) : 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -53,12 +56,22 @@ export function useCategories() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const createCategory = useCallback(async ({ name, slug, description, icon = '🎨', displayOrder = 0 }) => {
-    const supportedColumns = await getSupportedColumns('categories', ['display_order']);
+  const createCategory = useCallback(async ({
+    name,
+    slug,
+    description,
+    icon = DEFAULT_CATEGORY_ICON,
+    displayOrder = 0,
+    showFilter = true,
+  }) => {
+    const supportedColumns = await getSupportedColumns('categories', ['display_order', 'show_filter']);
     const insertData = { name, slug, description, icon };
 
     if (supportedColumns.display_order) {
       insertData.display_order = Number.isFinite(Number(displayOrder)) ? Number(displayOrder) : 0;
+    }
+    if (supportedColumns.show_filter) {
+      insertData.show_filter = showFilter !== false;
     }
 
     const { data, error: insertError } = await supabase
@@ -77,8 +90,15 @@ export function useCategories() {
     return formatted;
   }, []);
 
-  const updateCategory = useCallback(async (id, { name, slug, description, icon, displayOrder = 0 }) => {
-    const supportedColumns = await getSupportedColumns('categories', ['display_order']);
+  const updateCategory = useCallback(async (id, {
+    name,
+    slug,
+    description,
+    icon,
+    displayOrder = 0,
+    showFilter = true,
+  }) => {
+    const supportedColumns = await getSupportedColumns('categories', ['display_order', 'show_filter']);
     const updateData = {
       name,
       slug,
@@ -90,10 +110,38 @@ export function useCategories() {
     if (supportedColumns.display_order) {
       updateData.display_order = Number.isFinite(Number(displayOrder)) ? Number(displayOrder) : 0;
     }
+    if (supportedColumns.show_filter) {
+      updateData.show_filter = showFilter !== false;
+    }
 
     const { data, error: updateError } = await supabase
       .from('categories')
       .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw new Error(updateError.message);
+
+    const formatted = formatCategory(data);
+    setCategories((previousCategories) =>
+      sortCategoriesList(previousCategories.map((category) => (category.id === id ? formatted : category)))
+    );
+    return formatted;
+  }, []);
+
+  const updateCategoryFilter = useCallback(async (id, showFilter) => {
+    const supportedColumns = await getSupportedColumns('categories', ['show_filter']);
+    if (!supportedColumns.show_filter) {
+      throw new Error('Filter settings column is missing. Run the latest Supabase migration first.');
+    }
+
+    const { data, error: updateError } = await supabase
+      .from('categories')
+      .update({
+        show_filter: showFilter !== false,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
       .select()
       .single();
@@ -113,5 +161,14 @@ export function useCategories() {
     setCategories((previousCategories) => previousCategories.filter((category) => category.id !== id));
   }, []);
 
-  return { categories, loading, error, refetch: fetchCategories, createCategory, updateCategory, deleteCategory };
+  return {
+    categories,
+    loading,
+    error,
+    refetch: fetchCategories,
+    createCategory,
+    updateCategory,
+    updateCategoryFilter,
+    deleteCategory,
+  };
 }

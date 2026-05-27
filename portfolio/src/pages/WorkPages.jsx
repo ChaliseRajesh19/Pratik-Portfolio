@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorks } from "../hooks/useWorks";
@@ -495,11 +495,11 @@ function DirectImageLightbox({ item, images, categoryDisplayName, onClose, onSel
 }
 
 // Individual image tile for a category gallery.
-function FlatImageCard({ item, index, onClick, searchQuery }) {
+function FlatImageCard({ item, index, onClick, selectedCaption }) {
   const [hovered, setHovered] = useState(false);
   const headline = item.work.headline || item.work.title;
 
-  const isMatch = searchQuery && headline && headline.toLowerCase().includes(searchQuery.toLowerCase());
+  const isMatch = selectedCaption && headline === selectedCaption;
 
   return (
     <motion.div
@@ -602,7 +602,9 @@ function WorkPages() {
   const { categories } = useCategories();
   const { works, loading } = useWorks({ category });
   const [selected, setSelected] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCaption, setSelectedCaption] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
 
   const orderedWorks = React.useMemo(() => {
     return [...works].sort((left, right) => {
@@ -635,27 +637,72 @@ function WorkPages() {
     return images;
   }, [orderedWorks]);
 
-  // Filter images based on search query
-  const filteredImages = React.useMemo(() => {
-    if (!searchQuery.trim()) return flattenedImages;
+  const captionOptions = React.useMemo(() => {
+    const seen = new Set();
+    return orderedWorks.reduce((options, work) => {
+      const caption = (work.headline || work.title || '').trim();
+      if (!caption || seen.has(caption)) return options;
+      seen.add(caption);
+      options.push(caption);
+      return options;
+    }, []);
+  }, [orderedWorks]);
 
-    const query = searchQuery.toLowerCase().trim();
-    return flattenedImages.filter(item => {
-      const headline = item.work.headline || '';
-      const title = item.work.title || '';
-      const workCategory = item.work.category || '';
-
-      return (
-        headline.toLowerCase().includes(query) ||
-        title.toLowerCase().includes(query) ||
-        workCategory.toLowerCase().includes(query)
-      );
-    });
-  }, [flattenedImages, searchQuery]);
+  const captionImageCounts = React.useMemo(() => {
+    return flattenedImages.reduce((counts, item) => {
+      const caption = item.work.headline || item.work.title || '';
+      if (!caption) return counts;
+      counts[caption] = (counts[caption] || 0) + 1;
+      return counts;
+    }, {});
+  }, [flattenedImages]);
 
   const categoryInfo = categories.find(c => c.slug === category) || null;
   const displayName = categoryInfo?.name || category;
   const displayDesc = categoryInfo?.description || "";
+  const showCategoryFilter = categoryInfo ? categoryInfo.showFilter !== false : false;
+
+  useEffect(() => {
+    if (selectedCaption && !captionOptions.includes(selectedCaption)) {
+      setSelectedCaption('');
+      setSelected(null);
+    }
+  }, [captionOptions, selectedCaption]);
+
+  useEffect(() => {
+    if (!showCategoryFilter && selectedCaption) {
+      setSelectedCaption('');
+      setSelected(null);
+    }
+  }, [selectedCaption, showCategoryFilter]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setFilterOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setFilterOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Filter images by the selected work caption/title.
+  const filteredImages = React.useMemo(() => {
+    if (!selectedCaption) return flattenedImages;
+
+    return flattenedImages.filter(item => {
+      const caption = item.work.headline || item.work.title || '';
+      return caption === selectedCaption;
+    });
+  }, [flattenedImages, selectedCaption]);
 
   useSEO({
     title: `${displayName} Portfolio — Pratik Bhusal`,
@@ -666,7 +713,7 @@ function WorkPages() {
 
   return (
     <div
-      className="min-h-screen pt-28 md:pt-32 pb-16 relative"
+      className="min-h-screen pt-12 md:pt-14 pb-16 relative"
       style={{
         width: "100%",
         background: "#020617",
@@ -674,20 +721,18 @@ function WorkPages() {
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
-      <nav
-        aria-label="Breadcrumb"
-        className="relative z-10 flex items-center gap-2 px-6 mb-6 text-xs text-slate-500"
-      >
-        <Link to="/" className="transition-colors hover:text-violet-400">
-          Home
+      <div className="relative z-10 flex items-center px-6 mb-8">
+        <Link
+          to="/portfolio"
+          className="inline-flex h-11 items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/60 px-4 text-sm font-semibold text-slate-200 transition-all duration-300 hover:border-cyan-400/60 hover:text-cyan-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.12)]"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m12 19-7-7 7-7"/>
+            <path d="M19 12H5"/>
+          </svg>
+          Back
         </Link>
-        <span>›</span>
-        <Link to="/portfolio" className="transition-colors hover:text-violet-400">
-          Portfolio
-        </Link>
-        <span>›</span>
-        <span className="text-slate-400">{displayName}</span>
-      </nav>
+      </div>
 
       <div className="max-w-[1600px] mx-auto px-6">
         <div className="mb-12">
@@ -703,54 +748,125 @@ function WorkPages() {
               ) : null}
             </div>
 
-            {/* Search Box */}
-            <div className="relative lg:min-w-[320px]">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-slate-500"
-                >
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search images..."
-                className="w-full rounded-2xl border border-slate-700/80 bg-slate-900/60 backdrop-blur-md pl-12 pr-4 py-3.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition-all duration-300 focus:border-purple-500/60 focus:bg-slate-900/80 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
-              />
-              {searchQuery && (
+            {showCategoryFilter && (
+              <div ref={filterRef} className="relative w-full lg:w-[380px]">
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-slate-800/60 transition-colors text-slate-400 hover:text-slate-200"
-                  aria-label="Clear search"
+                  type="button"
+                  onClick={() => setFilterOpen((open) => !open)}
+                  className={`group flex min-h-[58px] w-full items-center justify-between gap-3 rounded-[18px] border bg-slate-950/70 px-4 text-left shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl transition-all duration-300 ${
+                    filterOpen
+                      ? 'border-cyan-400/60 ring-4 ring-cyan-400/10'
+                      : 'border-slate-700/80 hover:border-cyan-400/45'
+                  }`}
+                  aria-expanded={filterOpen}
+                  aria-haspopup="listbox"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18"/>
+                        <path d="M7 12h10"/>
+                        <path d="M10 18h4"/>
+                      </svg>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-400/80">Filter</span>
+                      <span className="block truncate text-sm font-semibold text-slate-100">
+                        {selectedCaption || 'All image titles'}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    {selectedCaption && (
+                      <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-bold text-cyan-200">
+                        {filteredImages.length}
+                      </span>
+                    )}
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`text-slate-400 transition-transform duration-300 ${filterOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </span>
                 </button>
-              )}
-            </div>
+
+                <AnimatePresence>
+                  {filterOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute right-0 z-30 mt-3 w-full overflow-hidden rounded-[18px] border border-slate-700/80 bg-[#0b1220]/95 shadow-[0_24px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl"
+                      role="listbox"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCaption('');
+                          setSelected(null);
+                          setFilterOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition ${
+                          !selectedCaption ? 'bg-cyan-400/15 text-cyan-100' : 'text-slate-200 hover:bg-slate-800/80'
+                        }`}
+                        role="option"
+                        aria-selected={!selectedCaption}
+                      >
+                        <span className="font-semibold">All image titles</span>
+                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-300">
+                          {flattenedImages.length}
+                        </span>
+                      </button>
+                      <div className="max-h-[280px] overflow-y-auto py-1">
+                        {captionOptions.map((caption) => (
+                          <button
+                            key={caption}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCaption(caption);
+                              setSelected(null);
+                              setFilterOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition ${
+                              selectedCaption === caption
+                                ? 'bg-cyan-400/15 text-cyan-100'
+                                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            }`}
+                            role="option"
+                            aria-selected={selectedCaption === caption}
+                          >
+                            <span className="min-w-0 truncate font-medium">{caption}</span>
+                            <span className="shrink-0 rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-300">
+                              {captionImageCounts[caption] || 0}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
-          {/* Search results counter */}
-          {searchQuery && (
+          {/* Filter results counter */}
+          {selectedCaption && (
             <div className="mb-6 text-sm text-slate-400">
               {filteredImages.length === 0 ? (
-                <span>No results found for "{searchQuery}"</span>
+                <span>No images found for "{selectedCaption}"</span>
               ) : (
                 <span>
-                  Found {filteredImages.length} image{filteredImages.length !== 1 ? 's' : ''} matching "{searchQuery}"
+                  Showing {filteredImages.length} image{filteredImages.length !== 1 ? 's' : ''} for "{selectedCaption}"
                 </span>
               )}
             </div>
@@ -787,16 +903,16 @@ function WorkPages() {
           </div>
         )}
 
-        {!loading && flattenedImages.length > 0 && filteredImages.length === 0 && searchQuery && (
+        {!loading && flattenedImages.length > 0 && filteredImages.length === 0 && selectedCaption && (
           <div className="text-center py-20">
             <div className="text-6xl mb-4 opacity-40">🔍</div>
             <p className="text-slate-400 text-lg mb-2">No images found</p>
-            <p className="text-slate-500 text-sm">Try a different search term or{' '}
+            <p className="text-slate-500 text-sm">Try a different title or{' '}
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => setSelectedCaption('')}
                 className="text-purple-400 hover:text-purple-300 underline"
               >
-                clear the search
+                clear the filter
               </button>
             </p>
           </div>
@@ -810,7 +926,7 @@ function WorkPages() {
                 item={item}
                 index={i}
                 onClick={() => setSelected(item)}
-                searchQuery={searchQuery}
+                selectedCaption={selectedCaption}
               />
             ))}
           </div>
