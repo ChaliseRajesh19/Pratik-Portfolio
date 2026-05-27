@@ -4,6 +4,7 @@ import {
   FaInstagram,
   FaLinkedin,
   FaFacebook,
+  FaTiktok,
   FaTwitter,
   FaChevronDown,
 } from "react-icons/fa";
@@ -116,7 +117,7 @@ function Contact({ withTopOffset = true }) {
       mainEntity: {
         '@type': 'Person',
         name: 'Pratik Bhusal',
-        email: 'mail@creativepratik.com',
+        email: 'pratikbhusal12345@gmail.com',
         telephone: '+9779762519961',
       },
     },
@@ -399,7 +400,7 @@ function Contact({ withTopOffset = true }) {
                     Email
                   </span>
                   <span className="text-sm font-bold text-slate-200 group-hover/item:text-white transition-colors cursor-text select-all" onClick={(e) => e.stopPropagation()}>
-                    mail@creativepratik.com
+                    pratikbhusal12345@gmail.com
                   </span>
                 </a>
 
@@ -435,6 +436,8 @@ function Contact({ withTopOffset = true }) {
                     icon: FaInstagram,
                     href: "https://instagram.com/creativepratik22",
                   },
+              { Icon: FaTiktok  , href: "https://www.tiktok.com/@creativepratik?_r=1&_t=ZS-96hmLwWWNJH"}
+
                 ].map((social, index) => (
                   <a
                     key={index}

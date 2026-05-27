@@ -103,7 +103,7 @@ function About({ withTopOffset = true }) {
         name: 'Pratik Bhusal',
         jobTitle: 'Graphic Designer & Video Editor',
         address: { '@type': 'PostalAddress', addressLocality: 'Kapilvastu', addressCountry: 'NP' },
-        email: 'mail@creativepratik.com',
+        email: 'pratikbhusal12345@gmail.com',
       },
     },
   });

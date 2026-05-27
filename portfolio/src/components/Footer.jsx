@@ -102,7 +102,7 @@ const Footer = () => {
               }}
               className="w-fit text-sm text-slate-400 hover:text-blue-500 transition-colors relative group"
             >
-              mail@creativepratik.com
+              pratikbhusal12345@gmail.com
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-blue-600 transition-all duration-300 group-hover:w-full" />
             </a>
             <span className="w-fit text-sm text-slate-400">

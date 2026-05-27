@@ -1,4 +1,4 @@
-export const PRIMARY_EMAIL = 'mail@creativepratik.com';
+export const PRIMARY_EMAIL = 'pratikbhusal12345@gmail.com';
 
 const MOBILE_EMAIL_CLIENT_PATTERN = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 

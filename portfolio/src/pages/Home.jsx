@@ -54,7 +54,7 @@ function Home() {
             'https://facebook.com/creativepratik22',
           ],
           address: { '@type': 'PostalAddress', addressCountry: 'NP' },
-          email: 'mail@creativepratik.com',
+          email: 'pratikbhusal12345@gmail.com',
         },
         {
           '@type': 'WebSite',
