@@ -436,7 +436,7 @@ function Contact({ withTopOffset = true }) {
                     icon: FaInstagram,
                     href: "https://instagram.com/creativepratik22",
                   },
-              { Icon: FaTiktok  , href: "https://www.tiktok.com/@creativepratik?_r=1&_t=ZS-96hmLwWWNJH"}
+                  { icon: FaTiktok, href: "https://www.tiktok.com/@creativepratik?_r=1&_t=ZS-96hmLwWWNJH" }
 
                 ].map((social, index) => (
                   <a
