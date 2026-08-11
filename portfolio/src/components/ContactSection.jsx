@@ -5,7 +5,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export default function ContactSection() {
+export default function ContactSection({ initialSettings }) {
+  const settings = initialSettings && initialSettings.contactEmail ? initialSettings : { contactEmail: 'pratikbhusal12345@gmail.com' }
   const sectionRef = useRef(null)
   const labelRef = useRef(null)
   const line1Ref = useRef(null)
@@ -156,7 +157,7 @@ export default function ContactSection() {
 
           {/* Clickable Badge */}
           <motion.a
-            href="mailto:pratikbhusal12345@gmail.com"
+            href={`mailto:${settings.contactEmail}`}
             whileHover={{ scale: 1.06 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="badge-interactive-group relative w-[130px] sm:w-[170px] aspect-square rounded-full flex items-center justify-center cursor-pointer group"
@@ -205,12 +206,12 @@ export default function ContactSection() {
       >
         {/* Email */}
         <motion.a
-          href="mailto:pratikbhusal12345@gmail.com"
+          href={`mailto:${settings.contactEmail}`}
           whileHover={{ color: '#ffffff' }}
           transition={{ duration: 0.2 }}
           className="font-mono text-xs sm:text-sm tracking-widest text-neutral-400 uppercase hover:text-white transition-colors cursor-pointer text-center sm:text-left"
         >
-          EMAIL:&nbsp;&nbsp;PRATIKBHUSAL12345@GMAIL.COM
+          EMAIL:&nbsp;&nbsp;{settings.contactEmail.toUpperCase()}
         </motion.a>
 
         {/* Social Links */}
@@ -233,35 +234,6 @@ export default function ContactSection() {
             </React.Fragment>
           ))}
         </div>
-      </div>
-
-      {/* ── FOOTER BAR ──────────────────────────────────────────────────── */}
-      <div
-        ref={footerRef}
-        className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 pt-6 pb-2 border-t border-neutral-900/60"
-      >
-        {/* Left: tagline */}
-        <span className="font-mono text-[11px] sm:text-xs tracking-widest text-neutral-500 uppercase text-center md:text-left">
-          VISUAL DESIGN · BRANDING · EDITORIAL
-        </span>
-
-        {/* Center: Designed & built by credit — NIRAJ highlighted */}
-        <a
-          href="https://nirajjoshi.com.np/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-mono text-[11px] sm:text-xs tracking-widest uppercase text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer text-center group"
-        >
-          DESIGNED &amp; BUILT BY{' '}
-          <span className="text-[#1e90ff] group-hover:text-[#ff6b35] transition-colors duration-300">
-            NIRAJ
-          </span>
-        </a>
-
-        {/* Right: copyright */}
-        <span className="font-mono text-[11px] sm:text-xs tracking-widest text-neutral-500 uppercase text-center md:text-right">
-          PRATIK BHUSAL © 2026. ALL RIGHTS RESERVED.
-        </span>
       </div>
     </section>
   )

@@ -2,17 +2,27 @@ import React, { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useContent } from '../context/ContentContext'
 
 import section2Img from '../assets/section2.jpg'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export default function SectionTwo() {
+  const { settings } = useContent()
   const containerRef = useRef(null)
   const imageRef = useRef(null)
   const titleRef = useRef(null)
   const topTextRef = useRef(null)
   const bottomTextRef = useRef(null)
+
+  const topWatermark = settings?.sectionTwoTopWatermark || 'NORDIC'
+  const bottomWatermark = settings?.sectionTwoBottomWatermark || 'STUDIO'
+  const subtitle = settings?.sectionTwoSubtitle || '01 — NORDIC BRAND IDENTITY'
+  const headline = settings?.sectionTwoHeadline || 'THE GEOMETRY OF COLD LIGHT.'
+
+  const topLetters = topWatermark.toUpperCase().split('')
+  const bottomLetters = bottomWatermark.toUpperCase().split('')
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -101,10 +111,9 @@ export default function SectionTwo() {
         ref={topTextRef}
         className="absolute top-12 inset-x-0 flex justify-between px-8 sm:px-16 pointer-events-none opacity-25 font-bebas text-[11vw] leading-none text-neutral-600 tracking-widest select-none"
       >
-        <span>A</span>
-        <span>L</span>
-        <span>E</span>
-        <span>X</span>
+        {topLetters.map((char, index) => (
+          <span key={index}>{char}</span>
+        ))}
       </div>
 
       {/* 3. CENTER CONTENT STAGE */}
@@ -112,13 +121,11 @@ export default function SectionTwo() {
         {/* LEFT: METADATA & HEADLINE */}
         <div ref={titleRef} className="lg:col-span-6 space-y-4">
           <div className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-[#ff6b35] font-semibold">
-            <span>01</span>
-            <span>—</span>
-            <span>NORDIC BRAND IDENTITY</span>
+            {subtitle}
           </div>
 
           <h2 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-white tracking-wider leading-[0.95]">
-            THE GEOMETRY OF COLD LIGHT.
+            {headline}
           </h2>
         </div>
 
@@ -144,10 +151,9 @@ export default function SectionTwo() {
         ref={bottomTextRef}
         className="absolute bottom-6 inset-x-0 flex justify-between px-8 sm:px-16 pointer-events-none opacity-20 font-bebas text-[11vw] leading-none text-neutral-600 tracking-widest select-none"
       >
-        <span>M</span>
-        <span>O</span>
-        <span>R</span>
-        <span>E</span>
+        {bottomLetters.map((char, index) => (
+          <span key={index}>{char}</span>
+        ))}
       </div>
     </section>
   )

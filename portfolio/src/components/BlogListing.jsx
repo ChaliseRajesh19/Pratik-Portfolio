@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { blogPosts } from '../data/blogData'
 import SEO from './SEO'
 import { gsap } from 'gsap'
 
-export default function BlogListing({ onNavigate }) {
+export default function BlogListing({ initialBlogs }) {
+  const navigate = useNavigate()
+  const blogs = initialBlogs && initialBlogs.length > 0 ? initialBlogs : blogPosts
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [visibleCount, setVisibleCount] = useState(3)
   const cardsRef = useRef([])
@@ -12,7 +15,7 @@ export default function BlogListing({ onNavigate }) {
   const categories = ['All', 'Design', 'Branding', 'Case Studies']
 
   // Filter posts
-  const filteredPosts = blogPosts.filter(
+  const filteredPosts = blogs.filter(
     (post) => selectedCategory === 'All' || post.category === selectedCategory
   )
 
@@ -74,10 +77,10 @@ export default function BlogListing({ onNavigate }) {
 
         {/* ── FEATURED POST ──────────────────────────────────────────────── */}
         {featuredPost && (
-          <article
+          <Link
+            to={`/blog/${featuredPost.slug}`}
             ref={addToRefs}
-            className="group cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-8 items-center border-b border-neutral-900 pb-12 mb-12"
-            onClick={() => onNavigate(`/blog/${featuredPost.slug}`)}
+            className="group cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-8 items-center border-b border-neutral-900 pb-12 mb-12 block"
           >
             {/* Featured Image */}
             <div className="lg:col-span-7 overflow-hidden rounded-xl bg-[#0a0a0a] border border-neutral-800/80 aspect-[16/9]">
@@ -93,7 +96,7 @@ export default function BlogListing({ onNavigate }) {
             {/* Featured Text */}
             <div className="lg:col-span-5 flex flex-col justify-center space-y-4">
               <div className="flex items-center gap-3 text-xs font-mono text-[#ff6b35] font-semibold tracking-wider">
-                <span>{featuredPost.category.toUpperCase()}</span>
+                <span>{featuredPost.category ? featuredPost.category.toUpperCase() : ''}</span>
                 <span>·</span>
                 <span className="text-neutral-500">{featuredPost.readTime}</span>
               </div>
@@ -111,7 +114,7 @@ export default function BlogListing({ onNavigate }) {
                 })}
               </time>
             </div>
-          </article>
+          </Link>
         )}
 
         {/* ── CATEGORY FILTER PILLS ──────────────────────────────────────── */}
@@ -137,11 +140,11 @@ export default function BlogListing({ onNavigate }) {
         {/* ── ARTICLE GRID ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {gridPosts.map((post) => (
-            <article
+            <Link
               key={post.slug}
+              to={`/blog/${post.slug}`}
               ref={addToRefs}
-              className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8"
-              onClick={() => onNavigate(`/blog/${post.slug}`)}
+              className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8 block"
             >
               {/* Thumbnail */}
               <div className="overflow-hidden rounded-xl bg-[#0a0a0a] border border-neutral-800/80 aspect-[16/10]">
@@ -155,7 +158,7 @@ export default function BlogListing({ onNavigate }) {
 
               {/* Text metadata */}
               <div className="flex items-center gap-3 text-xs font-mono text-[#ff6b35] font-semibold tracking-wider">
-                <span>{post.category.toUpperCase()}</span>
+                <span>{post.category ? post.category.toUpperCase() : ''}</span>
                 <span>·</span>
                 <span className="text-neutral-500">{post.readTime}</span>
               </div>
@@ -178,7 +181,7 @@ export default function BlogListing({ onNavigate }) {
                   year: 'numeric',
                 })}
               </time>
-            </article>
+            </Link>
           ))}
         </div>
 

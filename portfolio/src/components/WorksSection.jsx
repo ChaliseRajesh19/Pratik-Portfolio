@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -134,7 +135,8 @@ function DraggableCardGroupW5({ images }) {
   )
 }
 
-export default function WorksSection() {
+export default function WorksSection({ initialWorks }) {
+  const works = initialWorks && initialWorks.length > 0 ? initialWorks : worksData
   const containerRef = useRef(null)
   const [w4Hovered, setW4Hovered] = useState(false)
 
@@ -395,7 +397,7 @@ export default function WorksSection() {
 
       {/* DYNAMICALLY MAP OVER WORKS DATA */}
       <div className="space-y-16 sm:space-y-24 lg:space-y-32">
-        {worksData.map((work) => {
+        {works.map((work) => {
           // ─────────────────────────────────────────────────────────────
           // WORK 01: PATHAO 3-CARD INTERACTIVE DRAGGABLE LAYOUT
           // ─────────────────────────────────────────────────────────────
@@ -413,12 +415,12 @@ export default function WorksSection() {
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
 
-                  <div className="w1-text-el">
+                  <Link to={`/works/${work.slug}`} className="w1-text-el block group">
                     <GlowingHoverText
                       text={work.title}
                       className="font-bebas text-4xl sm:text-5xl lg:text-6xl tracking-wider leading-none"
                     />
-                  </div>
+                  </Link>
 
                   <p className="w1-text-el text-sm text-neutral-400 font-sans leading-relaxed max-w-lg">
                     {work.subtitle}
@@ -439,9 +441,11 @@ export default function WorksSection() {
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
 
-                  <h3 className="w2-text-el font-bebas text-4xl sm:text-5xl lg:text-6xl text-white tracking-wider leading-none">
-                    {work.title}
-                  </h3>
+                  <Link to={`/works/${work.slug}`} className="block group">
+                    <h3 className="w2-text-el font-bebas text-4xl sm:text-5xl lg:text-6xl text-white group-hover:text-[#1e90ff] transition-colors tracking-wider leading-none">
+                      {work.title}
+                    </h3>
+                  </Link>
 
                   <p className="w2-text-el text-sm text-neutral-400 font-sans leading-relaxed max-w-lg">
                     {work.description}
@@ -455,17 +459,19 @@ export default function WorksSection() {
                 </div>
 
                 <div className="w2-img lg:col-span-6 flex justify-center lg:justify-end">
-                  <motion.div
-                    whileHover={{ scale: 1.03, rotate: 1 }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-                    className="relative w-full max-w-lg aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
-                  >
-                    <img
-                      src={work.image}
-                      alt={work.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
-                  </motion.div>
+                  <Link to={`/works/${work.slug}`} className="w-full max-w-lg">
+                    <motion.div
+                      whileHover={{ scale: 1.03, rotate: 1 }}
+                      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                      className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
+                    >
+                      <img
+                        src={work.image}
+                        alt={work.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      />
+                    </motion.div>
+                  </Link>
                 </div>
               </div>
             )
@@ -481,28 +487,32 @@ export default function WorksSection() {
                   <span className="w3-text-el text-xs font-mono text-neutral-400 tracking-widest uppercase">
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
-                  <h3 className="w3-text-el font-bebas text-2xl sm:text-3xl text-white tracking-wider">
-                    {work.title}
-                  </h3>
+                  <Link to={`/works/${work.slug}`}>
+                    <h3 className="w3-text-el font-bebas text-2xl sm:text-3xl text-white hover:text-[#1e90ff] transition-colors tracking-wider">
+                      {work.title}
+                    </h3>
+                  </Link>
                 </div>
 
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  className="w3-img relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
-                >
-                  <img
-                    src={work.image}
-                    alt={work.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                  />
+                <Link to={`/works/${work.slug}`} className="block">
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                    className="w3-img relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
+                  >
+                    <img
+                      src={work.image}
+                      alt={work.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
 
-                  <div className="absolute inset-0 flex items-end p-8 sm:p-12 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none">
-                    <h2 className="w3-distort font-bebas text-6xl sm:text-8xl lg:text-9xl text-white tracking-wider leading-none drop-shadow-2xl">
-                      {work.overlayTitle || 'DISTORTION'}
-                    </h2>
-                  </div>
-                </motion.div>
+                    <div className="absolute inset-0 flex items-end p-8 sm:p-12 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none">
+                      <h2 className="w3-distort font-bebas text-6xl sm:text-8xl lg:text-9xl text-white tracking-wider leading-none drop-shadow-2xl">
+                        {work.overlayTitle || 'DISTORTION'}
+                      </h2>
+                    </div>
+                  </motion.div>
+                </Link>
               </div>
             )
           }
@@ -514,19 +524,21 @@ export default function WorksSection() {
             return (
               <div key={work.id} className="work-4 grid lg:grid-cols-12 gap-10 items-center py-6">
                 <div className="w4-img lg:col-span-6 flex justify-center lg:justify-start">
-                  <motion.div
-                    onMouseEnter={() => setW4Hovered(true)}
-                    onMouseLeave={() => setW4Hovered(false)}
-                    whileHover={{ scale: 1.04, y: -6 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-                    className="relative w-full max-w-lg aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_25px_65px_rgba(0,0,0,0.9)] group cursor-pointer"
-                  >
-                    <img
-                      src={work.image}
-                      alt={work.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
-                  </motion.div>
+                  <Link to={`/works/${work.slug}`} className="w-full max-w-lg">
+                    <motion.div
+                      onMouseEnter={() => setW4Hovered(true)}
+                      onMouseLeave={() => setW4Hovered(false)}
+                      whileHover={{ scale: 1.04, y: -6 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                      className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_25px_65px_rgba(0,0,0,0.9)] group cursor-pointer"
+                    >
+                      <img
+                        src={work.image}
+                        alt={work.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      />
+                    </motion.div>
+                  </Link>
                 </div>
 
                 <div className="w4-text lg:col-span-6 space-y-6">
@@ -534,16 +546,18 @@ export default function WorksSection() {
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
 
-                  <motion.h3
-                    animate={{
-                      color: w4Hovered ? '#ffffff' : '#f3f4f6',
-                      textShadow: w4Hovered ? '0 0 22px rgba(30,144,255,0.6)' : 'none',
-                    }}
-                    transition={{ duration: 0.3 }}
-                    className="font-bebas text-4xl sm:text-5xl lg:text-6xl tracking-wider leading-none transition-all"
-                  >
-                    {work.title}
-                  </motion.h3>
+                  <Link to={`/works/${work.slug}`} className="block">
+                    <motion.h3
+                      animate={{
+                        color: w4Hovered ? '#ffffff' : '#f3f4f6',
+                        textShadow: w4Hovered ? '0 0 22px rgba(30,144,255,0.6)' : 'none',
+                      }}
+                      transition={{ duration: 0.3 }}
+                      className="font-bebas text-4xl sm:text-5xl lg:text-6xl tracking-wider leading-none transition-all hover:text-[#1e90ff]"
+                    >
+                      {work.title}
+                    </motion.h3>
+                  </Link>
 
                   <p className="text-sm text-neutral-400 font-sans leading-relaxed max-w-lg">
                     {work.description}
@@ -566,9 +580,11 @@ export default function WorksSection() {
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
 
-                  <h3 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-white tracking-wider leading-none">
-                    {work.title}
-                  </h3>
+                  <Link to={`/works/${work.slug}`} className="block">
+                    <h3 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-white hover:text-[#1e90ff] transition-colors tracking-wider leading-none">
+                      {work.title}
+                    </h3>
+                  </Link>
 
                   <p className="text-sm text-neutral-400 font-sans leading-relaxed max-w-lg">
                     {work.description}
@@ -592,22 +608,26 @@ export default function WorksSection() {
                   <span className="w6-text-el text-xs font-mono text-[#ff6b35] tracking-widest uppercase font-semibold">
                     {work.index} &nbsp;/&nbsp; {work.category}
                   </span>
-                  <h3 className="w6-text-el font-bebas text-2xl sm:text-3xl text-white tracking-wider">
-                    {work.title}
-                  </h3>
+                  <Link to={`/works/${work.slug}`}>
+                    <h3 className="w6-text-el font-bebas text-2xl sm:text-3xl text-white hover:text-[#1e90ff] transition-colors tracking-wider">
+                      {work.title}
+                    </h3>
+                  </Link>
                 </div>
 
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  className="w6-img relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
-                >
-                  <img
-                    src={work.image}
-                    alt={work.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                  />
-                </motion.div>
+                <Link to={`/works/${work.slug}`} className="block">
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                    className="w6-img relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer"
+                  >
+                    <img
+                      src={work.image}
+                      alt={work.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                  </motion.div>
+                </Link>
               </div>
             )
           }

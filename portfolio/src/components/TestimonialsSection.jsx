@@ -39,7 +39,8 @@ const TESTIMONIALS = [
   },
 ]
 
-export default function TestimonialsSection() {
+export default function TestimonialsSection({ initialTestimonials }) {
+  const list = initialTestimonials && initialTestimonials.length > 0 ? initialTestimonials : TESTIMONIALS
   const [hoveredIdx, setHoveredIdx] = useState(null)
   const [clickedIdx, setClickedIdx] = useState(null)
 
@@ -78,7 +79,7 @@ export default function TestimonialsSection() {
 
       {/* ── ROLODEX ACCORDION LIST ───────────────────────────────────────── */}
       <dl className="max-w-4xl mx-auto divide-y divide-neutral-900/60 border-b border-neutral-900/60">
-        {TESTIMONIALS.map((t, index) => {
+        {list.map((t, index) => {
           const isActive = activeIndex === index
           const isDimmed = isAnyActive && !isActive
 
@@ -139,7 +140,7 @@ export default function TestimonialsSection() {
                       >
                         {/* Client Avatar / Photo */}
                         <img
-                          src={t.avatar}
+                          src={t.avatarImage || t.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}
                           alt={t.name}
                           className="w-12 h-12 rounded-full object-cover border border-neutral-800/80 shadow-md flex-shrink-0"
                           loading="lazy"

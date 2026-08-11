@@ -1,636 +1,478 @@
-import React, {
-  useState, useEffect, useRef, useCallback,
-} from 'react'
-import { gsap } from 'gsap'
+import React, { useEffect, useState, useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import pratikIcon from '../assets/Pratik icon.png'
 
-/**
- * Smart Sticky Navbar + Premium Mobile Drawer
- *
- * Desktop: logo-left | center-pill | CTA-right
- *   - Compact (scroll down) → only center pill floats
- *   - Full (scroll up / idle) → full bar returns
- *
- * Mobile: logo-left | hamburger-right
- *   - Tap hamburger → full-screen drawer slides from right
- *   - GSAP staggered links, hamburger morphs to ✕
- *   - Body scroll lock, backdrop blur, focus trap, Escape key
- */
-
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { label: 'Home',      id: 'home'      },
-  { label: 'Works',     id: 'portfolio' },
-  { label: 'About',     id: 'about'     },
-  { label: 'Expertise', id: 'expertise' },
-  { label: 'Blog',      id: 'blog'      },
-  { label: 'Contact',   id: 'contact'   },
+  { label: 'Home', path: '/' },
+  { label: 'Works', path: '/works' },
+  { label: 'About', path: '/about' },
+  { label: 'Blog', path: '/blog' },
+  { label: 'Contact', path: '/#contact' },
 ]
-const BRAND_TEXT    = 'PRATIK BHUSAL'
-const SCROLL_THRESHOLD = 60   // px before compacting
-const IDLE_DELAY       = 200  // ms before restoring full nav
-const NAV_HEIGHT       = 64   // fixed nav offset for scroll targets
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-function scrollToSection(id, reduced) {
-  const el = document.getElementById(id)
-  if (!el) return
-  const top = el.getBoundingClientRect().top + window.scrollY - NAV_HEIGHT
-  window.scrollTo({ top: Math.max(0, top), behavior: reduced ? 'auto' : 'smooth' })
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 export default function Navbar() {
-  const [activeNav,     setActiveNav]     = useState('Home')
-  const [navState,      setNavState]      = useState('full') // 'full' | 'compact'
-  const [drawerOpen,    setDrawerOpen]    = useState(false)
-  const [isLogoHovered, setIsLogoHovered] = useState(false)
-  const [currentPath,   setCurrentPath]   = useState(
-    typeof window !== 'undefined' ? window.location.pathname : '/'
-  )
+  const location = useLocation()
+  const currentPath = location.pathname
+  const hash = location.hash
+
+  const [isMounted, setIsMounted] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [hoveredIdx, setHoveredIdx] = useState(null)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname)
-    }
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    setIsMounted(true)
   }, [])
 
-  // Scroll refs
-  const lastScrollY  = useRef(0)
-  const rafId        = useRef(null)
-  const idleTimer    = useRef(null)
-  const prefersReduced = useRef(
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
+  // Magnetic button state
+  const btnRef = useRef(null)
+  const [magneticPos, setMagneticPos] = useState({ x: 0, y: 0 })
 
-  // Drawer GSAP refs
-  const drawerRef    = useRef(null)
-  const backdropRef  = useRef(null)
-  const linkRefs     = useRef([])
-  const hamburgerRef = useRef(null)
-  const firstFocusRef = useRef(null)
+  // Determine active nav index based on path and hash
+  const getActiveIndex = () => {
+    if (currentPath === '/works' || currentPath.startsWith('/works/')) return 1
+    if (currentPath === '/about') return 2
+    if (currentPath === '/blog' || currentPath.startsWith('/blog/')) return 3
+    if (hash === '#contact') return 4
+    if (currentPath === '/') return 0
+    return 0
+  }
 
-  const isCompact = navState === 'compact'
-  const transition = prefersReduced.current
-    ? { duration: 0 }
-    : { duration: 0.35, ease: [0.4, 0, 0.2, 1] }
+  const activeIdx = getActiveIndex()
 
-  // ─── SCROLL DIRECTION DETECTION ──────────────────────────────────────────
-  const updateNavState = useCallback(() => {
-    const currentY = window.scrollY
-    const diff = currentY - lastScrollY.current
-    if (currentY < SCROLL_THRESHOLD) {
-      setNavState('full')
-    } else if (diff > 0) {
-      setNavState('compact')
-    } else if (diff < 0) {
-      setNavState('full')
-    }
-    lastScrollY.current = currentY
-    clearTimeout(idleTimer.current)
-    idleTimer.current = setTimeout(() => setNavState('full'), IDLE_DELAY)
-  }, [])
+  const [showFullNav, setShowFullNav] = useState(true)
+  const lastScrollY = useRef(0)
+  const idleTimer = useRef(null)
+  const ticking = useRef(false)
 
+  // Track scroll position, direction, and idle settle to compact state
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      const progress = maxScroll > 0 ? currentScrollY / maxScroll : 0
+      setScrollProgress(progress)
+
+      const isAtTop = currentScrollY <= 60
+      const isScrollingUp = currentScrollY < lastScrollY.current
+
+      if (isAtTop) {
+        setShowFullNav(true)
+        setIsScrolled(false)
+      } else {
+        setIsScrolled(true)
+        if (isScrollingUp) {
+          setShowFullNav(true)
+        } else {
+          // Scrolling down
+          setShowFullNav(false)
+        }
+      }
+
+      lastScrollY.current = currentScrollY
+
+      // Settle into compact state after 250ms idle (no scroll movement)
+      if (idleTimer.current) clearTimeout(idleTimer.current)
+      idleTimer.current = setTimeout(() => {
+        if (window.scrollY > 60) {
+          setShowFullNav(false)
+        }
+      }, 250)
+
+      ticking.current = false
+    }
+
     const onScroll = () => {
-      if (rafId.current) return
-      rafId.current = requestAnimationFrame(() => {
-        updateNavState()
-        rafId.current = null
-      })
+      if (!ticking.current) {
+        window.requestAnimationFrame(handleScroll)
+        ticking.current = true
+      }
     }
+
+    handleScroll() // Initialize state
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       window.removeEventListener('scroll', onScroll)
-      cancelAnimationFrame(rafId.current)
-      clearTimeout(idleTimer.current)
-    }
-  }, [updateNavState])
-
-  // ─── SCROLL SPY ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    // Only set up scroll spy when on homepage
-    if (window.location.pathname !== '/') {
-      setActiveNav('') // Clear active highlights when visiting separate pages
-      return
-    }
-
-    const sectionMap = {}
-    NAV_ITEMS.forEach(({ label, id }) => { sectionMap[id] = label })
-    const visibilityMap = {}
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { visibilityMap[e.target.id] = e.intersectionRatio })
-      let bestId = null, bestRatio = 0
-      Object.entries(visibilityMap).forEach(([id, ratio]) => {
-        if (ratio > bestRatio) { bestRatio = ratio; bestId = id }
-      })
-      if (bestId && sectionMap[bestId]) setActiveNav(sectionMap[bestId])
-    }, {
-      threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-      rootMargin: '-10% 0px -10% 0px',
-    })
-
-    // Give DOM 200ms to mount before binding observer
-    const timer = setTimeout(() => {
-      NAV_ITEMS.forEach(({ id }) => {
-        const el = document.getElementById(id)
-        if (el) observer.observe(el)
-      })
-    }, 200)
-
-    return () => {
-      clearTimeout(timer)
-      observer.disconnect()
+      if (idleTimer.current) clearTimeout(idleTimer.current)
     }
   }, [currentPath])
 
-  // ─── DRAWER OPEN ─────────────────────────────────────────────────────────
-  const openDrawer = useCallback(() => {
-    setDrawerOpen(true)
-    // Lock body scroll
-    document.body.style.overflow = 'hidden'
-  }, [])
-
-  // ─── DRAWER CLOSE (with optional callback on complete) ───────────────────
-  const closeDrawer = useCallback((onComplete) => {
-    if (!drawerRef.current) {
-      setDrawerOpen(false)
-      document.body.style.overflow = ''
-      onComplete?.()
-      return
-    }
-
-    if (prefersReduced.current) {
-      setDrawerOpen(false)
-      document.body.style.overflow = ''
-      onComplete?.()
-      return
-    }
-
-    // Animate links OUT fast
-    const links = linkRefs.current.filter(Boolean)
-    gsap.to(links, {
-      opacity: 0,
-      y: 10,
-      duration: 0.15,
-      stagger: 0.03,
-      ease: 'power2.in',
-    })
-
-    // Slide panel out + fade backdrop
-    gsap.to(drawerRef.current, {
-      x: '100%',
-      duration: 0.35,
-      ease: 'cubic-bezier(0.65, 0, 0.35, 1)',
-    })
-    gsap.to(backdropRef.current, {
-      opacity: 0,
-      duration: 0.35,
-      onComplete: () => {
-        setDrawerOpen(false)
-        document.body.style.overflow = ''
-        // Return focus to hamburger
-        hamburgerRef.current?.focus()
-        onComplete?.()
-      },
-    })
-  }, [])
-
-  // ─── NAV CLICK HANDLER ───────────────────────────────────────────────────
-  const handleNavClick = useCallback((item) => {
-    const label = typeof item === 'string' ? item : item.label
-    const id    = typeof item === 'string'
-      ? (NAV_ITEMS.find(n => n.label === item)?.id ?? item.toLowerCase())
-      : item.id
-    setActiveNav(label)
-
-    const runNavigation = () => {
-      const isHomepage = window.location.pathname === '/'
-
-      if (isHomepage) {
-        if (id === 'blog') {
-          // Clean up ScrollTriggers to allow safe unmounting by React
-          if (typeof window !== 'undefined' && window.gsap) {
-            ScrollTrigger.getAll().forEach(t => t.kill(true))
-          }
-          window.history.pushState({}, '', '/blog')
-          window.dispatchEvent(new PopStateEvent('popstate'))
-          return
-        }
-        
-        // Scroll in-page directly
-        scrollToSection(id, prefersReduced.current)
-      } else {
-        // Standalone routing when visiting from external pages
-        if (id === 'blog') {
-          if (typeof window !== 'undefined' && window.gsap) {
-            ScrollTrigger.getAll().forEach(t => t.kill(true))
-          }
-          window.history.pushState({}, '', '/blog')
-          window.dispatchEvent(new PopStateEvent('popstate'))
-          return
-        }
-
-        if (id === 'portfolio') {
-          if (typeof window !== 'undefined' && window.gsap) {
-            ScrollTrigger.getAll().forEach(t => t.kill(true))
-          }
-          window.history.pushState({}, '', '/works')
-          window.dispatchEvent(new PopStateEvent('popstate'))
-          return
-        }
-
-        if (id === 'about') {
-          if (typeof window !== 'undefined' && window.gsap) {
-            ScrollTrigger.getAll().forEach(t => t.kill(true))
-          }
-          window.history.pushState({}, '', '/about')
-          window.dispatchEvent(new PopStateEvent('popstate'))
-          return
-        }
-
-        // Home, Expertise, Contact -> Redirect to / and scroll in-page
-        if (typeof window !== 'undefined' && window.gsap) {
-          ScrollTrigger.getAll().forEach(t => t.kill(true))
-        }
-        window.history.pushState({}, '', '/')
-        window.dispatchEvent(new PopStateEvent('popstate'))
-        setTimeout(() => {
-          scrollToSection(id, prefersReduced.current)
-        }, 150)
-      }
-    }
-
-    closeDrawer(runNavigation)
-  }, [closeDrawer])
-
-  // ─── ANIMATE DRAWER IN once mounted ──────────────────────────────────────
+  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    if (!drawerOpen || !drawerRef.current) return
-    const links = linkRefs.current.filter(Boolean)
-
-    if (prefersReduced.current) {
-      gsap.set(drawerRef.current,  { x: 0, opacity: 1 })
-      gsap.set(backdropRef.current, { opacity: 1 })
-      gsap.set(links, { opacity: 1, y: 0 })
-      firstFocusRef.current?.focus()
-      return
+    if (typeof document === 'undefined') return
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
     }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMobileOpen])
 
-    // Panel slides in from right
-    gsap.fromTo(drawerRef.current,
-      { x: '100%' },
-      { x: '0%', duration: 0.42, ease: 'cubic-bezier(0.65, 0, 0.35, 1)' }
-    )
-
-    // Backdrop fades in
-    gsap.fromTo(backdropRef.current,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.35 }
-    )
-
-    // Links stagger in
-    gsap.fromTo(links,
-      { opacity: 0, y: 22 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.45,
-        stagger: 0.06,
-        ease: 'power3.out',
-        delay: 0.18,
-      }
-    )
-
-    // Focus first link
-    setTimeout(() => firstFocusRef.current?.focus(), 450)
-  }, [drawerOpen])
-
-  // ─── ESCAPE KEY & FOCUS TRAP ─────────────────────────────────────────────
+  // Close mobile menu on Escape key
   useEffect(() => {
-    if (!drawerOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isMobileOpen) {
+        setIsMobileOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileOpen])
 
-    const onKey = (e) => {
-      if (e.key === 'Escape') closeDrawer()
+  // Magnetic button hover handler
+  const handleMouseMoveCTA = (e) => {
+    if (!btnRef.current || typeof window === 'undefined') return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-      // Focus trap
-      if (e.key === 'Tab' && drawerRef.current) {
-        const focusable = drawerRef.current.querySelectorAll(
-          'button, [href], input, [tabindex]:not([tabindex="-1"])'
-        )
-        const first = focusable[0]
-        const last  = focusable[focusable.length - 1]
-        if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus() }
-        } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus() }
+    const rect = btnRef.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const distanceX = e.clientX - centerX
+    const distanceY = e.clientY - centerY
+
+    const distance = Math.hypot(distanceX, distanceY)
+    if (distance < 80) {
+      setMagneticPos({ x: distanceX * 0.2, y: distanceY * 0.2 })
+    } else {
+      setMagneticPos({ x: 0, y: 0 })
+    }
+  }
+
+  const handleMouseLeaveCTA = () => {
+    setMagneticPos({ x: 0, y: 0 })
+  }
+
+  // Handle Logo & Monogram click: smooth scroll to top/hero section
+  const handleLogoClick = (e) => {
+    setIsMobileOpen(false)
+    if (currentPath === '/') {
+      e.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Smooth scroll handler for anchor links (#contact, #expertise)
+  const handleNavClick = (path) => {
+    setIsMobileOpen(false)
+    if (path.includes('#')) {
+      const [targetPath, targetHash] = path.split('#')
+      if (currentPath === targetPath || (targetPath === '' && currentPath === '/')) {
+        const el = document.getElementById(targetHash)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
         }
       }
     }
+  }
 
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [drawerOpen, closeDrawer])
-
-  // ─── CENTER NAV PILL ─────────────────────────────────────────────────────
-  const NavPill = () => (
-    <nav className={`flex items-center gap-1 transition-all duration-300 ${
-      isCompact
-        ? 'bg-[#0f0f0f]/90 backdrop-blur-[14px] border border-neutral-700/70 rounded-full px-2 py-1 shadow-[0_8px_32px_rgba(0,0,0,0.7)]'
-        : 'bg-[#111111] border border-neutral-800/60 rounded-lg px-1 py-1'
-    }`}>
-      {NAV_ITEMS.map(({ label, id }) => {
-        const isActive = activeNav === label
-        return (
-          <button
-            key={id}
-            onClick={() => handleNavClick({ label, id })}
-            className={`relative px-4 py-1.5 text-xs font-medium tracking-wide cursor-pointer transition-colors duration-200 ${
-              isCompact ? 'rounded-full' : 'rounded-md'
-            } ${isActive ? 'text-white' : 'text-neutral-400 hover:text-white'}`}
-          >
-            {isActive && (
-              <motion.div
-                layoutId="activePill"
-                transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                className={`absolute inset-0 ${
-                  isCompact
-                    ? 'bg-[#1e90ff] rounded-full shadow-[0_0_12px_rgba(30,144,255,0.45)]'
-                    : 'bg-white rounded-md'
-                }`}
-              />
-            )}
-            <span className={`relative z-10 font-semibold ${
-              isActive && !isCompact ? 'text-[#1e90ff]' : ''
-            } ${isActive && isCompact ? 'text-black' : ''}`}>
-              {label}
-            </span>
-          </button>
-        )
-      })}
-    </nav>
-  )
-
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ══ DESKTOP NAV ═══════════════════════════════════════════════════ */}
+
+      {/* ── 2. MAIN NAVIGATION HEADER (Premium Dark Editorial Glass Bar) ─ */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 hidden md:block"
-        style={{ pointerEvents: 'none' }}
+        style={{ zIndex: 999999 }}
+        className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          showFullNav
+            ? 'bg-[#0c0c0c]/95 border-b border-neutral-800/90 py-3 sm:py-4 shadow-2xl backdrop-blur-lg pointer-events-auto'
+            : 'bg-transparent border-transparent shadow-none py-2.5 sm:py-3 pointer-events-none'
+        }`}
       >
-        <div
-          className="relative w-full flex items-center justify-center px-6 pt-3 pb-3"
-          style={{ pointerEvents: 'none' }}
-        >
-          {/* LEFT — Logo + Wordmark */}
-          <motion.div
-            animate={{ opacity: isCompact ? 0 : 1, x: isCompact ? -24 : 0 }}
-            transition={transition}
-            className="absolute left-6 flex items-center gap-3 cursor-pointer select-none"
-            style={{ pointerEvents: isCompact ? 'none' : 'auto' }}
-            onMouseEnter={() => setIsLogoHovered(true)}
-            onMouseLeave={() => setIsLogoHovered(false)}
-            onClick={() => handleNavClick('Home')}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between relative">
+
+          {/* ── LEFT: AVATAR & BRAND WORDMARK (DESKTOP) ───────────────────── */}
+          <Link
+            to="/"
+            onClick={handleLogoClick}
+            className={`group hidden md:flex items-center gap-3 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-20 ${
+              showFullNav ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+            aria-label="Pratik Bhusal Homepage"
           >
-            <div className="w-11 h-11 rounded-md overflow-hidden shadow-md flex-shrink-0">
-              <img src={pratikIcon} alt="Pratik Bhusal" className="w-full h-full object-cover" />
+            {/* Circular Avatar */}
+            <div className="relative w-9 sm:w-10 h-9 sm:h-10 rounded-full overflow-hidden border border-neutral-800 bg-[#0a0a0a] shrink-0 shadow-md">
+              <img
+                src={pratikIcon}
+                alt="Pratik Bhusal"
+                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+              />
             </div>
-            <div className="font-bebas text-2xl tracking-widest flex">
-              {BRAND_TEXT.split('').map((char, i) => (
-                <motion.span
-                  key={i}
-                  animate={{
-                    opacity: isLogoHovered ? 1 : 0.55,
-                    color: isLogoHovered ? '#ffffff' : '#9ca3af',
-                    textShadow: isLogoHovered ? '0 0 14px rgba(30,144,255,0.65)' : 'none',
-                  }}
-                  transition={{ duration: 0.18, delay: isLogoHovered ? i * 0.028 : (BRAND_TEXT.length - i) * 0.012 }}
-                  className="inline-block"
+
+            {/* Wordmark */}
+            <span className="font-bebas text-base sm:text-lg tracking-wider text-neutral-300 group-hover:text-white group-hover:tracking-widest transition-all duration-300 uppercase select-none">
+              PRATIK BHUSAL
+            </span>
+          </Link>
+
+          {/* ── CENTER: PILL-SHAPED NAVIGATION CONTAINER (DESKTOP) ───────── */}
+          <nav
+            className="hidden md:flex items-center gap-1 px-2 py-1.5 rounded-full bg-[#0c0c0c]/90 border border-neutral-800/80 backdrop-blur-md shadow-[0_8px_25px_rgba(0,0,0,0.7)] z-20 pointer-events-auto transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            aria-label="Main Navigation"
+          >
+            {NAV_ITEMS.map((item, idx) => {
+              const isActive = activeIdx === idx
+              const isHovered = hoveredIdx === idx
+
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  onClick={() => handleNavClick(item.path)}
+                  onMouseEnter={() => setHoveredIdx(idx)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  className={`relative px-4 py-1.5 rounded-full font-mono text-xs tracking-wider uppercase transition-colors duration-200 select-none ${
+                    isActive
+                      ? 'text-black font-bold'
+                      : 'text-neutral-400 hover:text-white font-medium'
+                  }`}
+                  aria-current={isActive ? 'page' : undefined}
                 >
-                  {char === ' ' ? '\u00A0' : char}
-                </motion.span>
-              ))}
+                  {/* Active White Pill Background (Fades & scales gently in place) */}
+                  {isActive && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="absolute inset-0 rounded-full bg-white shadow-[0_2px_12px_rgba(255,255,255,0.25)] z-0"
+                    />
+                  )}
+
+                  {/* Hover Preview Background Pill */}
+                  {isHovered && !isActive && (
+                    <div className="absolute inset-0 rounded-full bg-neutral-800/60 z-0 transition-opacity duration-150" />
+                  )}
+
+                  {/* Label Text */}
+                  <span className="relative z-10">{item.label}</span>
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* ── RIGHT: "HIRE ME" BUTTON + MAGNETIC "GET IN TOUCH" BUTTON ───── */}
+          <div
+            className={`hidden md:flex items-center gap-4 z-20 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              showFullNav ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+          >
+            {/* Custom HIRE ME Button with sliding hover fill from right */}
+            <a
+              href="mailto:pratikbhusal12345@gmail.com"
+              className="group relative overflow-hidden px-4 py-2 rounded-full border border-neutral-800 hover:border-[#1e90ff] bg-transparent text-neutral-400 hover:text-white font-bold font-mono text-xs tracking-wider uppercase cursor-pointer select-none transition-all duration-300"
+            >
+              {/* Blue Background Fill Slide-in from Right */}
+              <span className="absolute inset-0 bg-[#1e90ff] origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out z-0" />
+
+              <span className="relative z-10">HIRE ME</span>
+            </a>
+
+            <motion.div
+              ref={btnRef}
+              onMouseMove={handleMouseMoveCTA}
+              onMouseLeave={handleMouseLeaveCTA}
+              animate={{ x: magneticPos.x, y: magneticPos.y }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            >
+              <a
+                href="mailto:pratikbhusal12345@gmail.com"
+                className="group relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white hover:bg-neutral-100 text-black font-bold font-mono text-xs tracking-wider uppercase flex items-center gap-2.5 transition-all shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_6px_28px_rgba(255,255,255,0.3)] cursor-pointer"
+              >
+                <span>GET IN TOUCH</span>
+
+                {/* Small Blue Circular Icon with Rotating Arrow */}
+                <div className="w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-[#1e90ff] text-black flex items-center justify-center font-bold text-xs shrink-0 shadow-sm transition-transform duration-200 group-hover:rotate-45">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-black"
+                  >
+                    <line x1="7" y1="17" x2="17" y2="7"></line>
+                    <polyline points="7 7 17 7 17 17"></polyline>
+                  </svg>
+                </div>
+              </a>
+            </motion.div>
+          </div>
+
+          {/* ── MOBILE BAR (< 768px): BRAND + HAMBURGER ────────────────────── */}
+          <div className="flex md:hidden items-center justify-between w-full pointer-events-auto">
+            {/* Brand Monogram */}
+            <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-neutral-800 bg-[#0a0a0a]">
+                <img src={pratikIcon} alt="Pratik" className="w-full h-full object-cover" />
+              </div>
+              <span className="font-bebas text-base tracking-wider text-white">
+                PRATIK
+              </span>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              {/* Animated Hamburger Button */}
+              <button
+                onClick={() => setIsMobileOpen(!isMobileOpen)}
+                className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 cursor-pointer z-50 focus:outline-none bg-transparent border-none p-1"
+                aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMobileOpen}
+              >
+                <motion.span
+                  animate={isMobileOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-5 h-[2px] bg-white rounded-full block origin-center"
+                />
+                <motion.span
+                  animate={isMobileOpen ? { opacity: 0 } : { opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-5 h-[2px] bg-white rounded-full block"
+                />
+                <motion.span
+                  animate={isMobileOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-5 h-[2px] bg-white rounded-full block origin-center"
+                />
+              </button>
             </div>
-          </motion.div>
+          </div>
 
-          {/* CENTER — Nav Pill */}
-          <motion.div
-            animate={{ scale: isCompact ? 0.97 : 1 }}
-            transition={transition}
-            style={{ pointerEvents: 'auto' }}
-          >
-            <NavPill />
-          </motion.div>
-
-          {/* RIGHT — Hire Me + Get in Touch */}
-          <motion.div
-            animate={{ opacity: isCompact ? 0 : 1, x: isCompact ? 24 : 0 }}
-            transition={transition}
-            className="absolute right-6 flex items-center gap-3"
-            style={{ pointerEvents: isCompact ? 'none' : 'auto' }}
-          >
-            <button
-              onClick={() => window.open('https://wa.me/9779762519961', '_blank')}
-              className="text-xs font-medium text-neutral-300 hover:text-white px-3 py-2 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer"
-            >
-              Hire Me
-            </button>
-            <button
-              onClick={() => window.open('mailto:pratikbhusal12345@gmail.com', '_blank')}
-              className="group flex items-center bg-white hover:bg-neutral-100 transition-all rounded-md p-1 pl-3 font-medium text-xs cursor-pointer shadow-lg"
-            >
-              <span className="font-semibold mr-2 text-neutral-900 group-hover:text-[#1e90ff] transition-colors">
-                Get in Touch
-              </span>
-              <span className="w-6 h-6 rounded bg-[#1e90ff] flex items-center justify-center text-white shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                </svg>
-              </span>
-            </button>
-          </motion.div>
         </div>
       </header>
 
-      {/* ══ MOBILE TOP BAR ════════════════════════════════════════════════ */}
-      <header className="fixed top-0 left-0 right-0 z-50 md:hidden">
-        <div className={`flex items-center justify-between w-full px-5 py-3 transition-all duration-300 ${
-          isCompact || drawerOpen
-            ? 'bg-[#080808]/95 backdrop-blur-[14px] border-b border-neutral-800/50'
-            : 'bg-transparent'
-        }`}>
-          {/* Logo */}
-          <div
-            className="flex items-center gap-2.5 cursor-pointer select-none"
-            onClick={() => handleNavClick({ label: 'Home', id: 'home' })}
-          >
-            <div className="w-9 h-9 rounded-md overflow-hidden">
-              <img src={pratikIcon} alt="Pratik Bhusal" className="w-full h-full object-cover" />
-            </div>
-            <span className="font-bebas text-lg tracking-widest text-white">PRATIK BHUSAL</span>
-          </div>
-
-          {/* Right side: Get in Touch CTA + Hamburger */}
-          <div className="flex items-center gap-3">
-            {/* CTA stays visible in collapsed bar */}
-            {!drawerOpen && (
-              <button
-                onClick={() => window.open('mailto:pratikbhusal12345@gmail.com', '_blank')}
-                className="hidden sm:flex items-center bg-white rounded-md p-1 pl-3 font-medium text-xs cursor-pointer shadow-md"
-              >
-                <span className="font-semibold mr-2 text-neutral-900 text-[11px]">Get in Touch</span>
-                <span className="w-5 h-5 rounded bg-[#1e90ff] flex items-center justify-center text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                  </svg>
-                </span>
-              </button>
-            )}
-
-            {/* Hamburger → X morphing button */}
-            <button
-              ref={hamburgerRef}
-              onClick={() => drawerOpen ? closeDrawer() : openDrawer()}
-              aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={drawerOpen}
-              aria-controls="mobile-drawer"
-              className="relative w-9 h-9 flex flex-col items-center justify-center gap-[5px] cursor-pointer rounded-md hover:bg-neutral-800/50 transition-colors p-2"
-            >
-              <span
-                className="block w-5 h-[1.5px] bg-white origin-center transition-all duration-250"
-                style={{
-                  transform: drawerOpen ? 'rotate(45deg) translate(0px, 5px)' : 'none',
-                  transitionTimingFunction: 'cubic-bezier(0.65,0,0.35,1)',
-                }}
-              />
-              <span
-                className="block w-5 h-[1.5px] bg-white origin-center transition-all duration-250"
-                style={{
-                  opacity: drawerOpen ? 0 : 1,
-                  transform: drawerOpen ? 'scaleX(0)' : 'scaleX(1)',
-                  transitionTimingFunction: 'cubic-bezier(0.65,0,0.35,1)',
-                }}
-              />
-              <span
-                className="block w-5 h-[1.5px] bg-white origin-center transition-all duration-250"
-                style={{
-                  transform: drawerOpen ? 'rotate(-45deg) translate(0px, -5px)' : 'none',
-                  transitionTimingFunction: 'cubic-bezier(0.65,0,0.35,1)',
-                }}
-              />
-            </button>
-          </div>
-        </div>
-
-        {/* ── MOBILE DRAWER ──────────────────────────────────────────────── */}
-        {drawerOpen && (
+      {/* ── 3. FULL-SCREEN STAGGERED MOBILE DRAWER (< 768px) ─────────────── */}
+      <AnimatePresence>
+        {isMobileOpen && (
           <>
-            {/* Backdrop — tap to close */}
-            <div
-              ref={backdropRef}
-              onClick={() => closeDrawer()}
-              className="fixed inset-0 z-40 bg-black/60"
-              style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
+            {/* Backdrop Scrim */}
+            <motion.div
+              style={{ zIndex: 9999998 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md md:hidden"
             />
 
-            {/* Drawer Panel */}
-            <div
-              id="mobile-drawer"
-              ref={drawerRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Navigation menu"
-              className="fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[85vw] max-w-sm bg-[#080808] flex flex-col"
-              style={{ willChange: 'transform' }}
+            {/* Mobile Drawer */}
+            <motion.div
+              style={{ zIndex: 9999999 }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[#080808] border-l border-neutral-800 flex flex-col justify-between p-8 pt-20 md:hidden shadow-2xl overflow-y-auto relative"
             >
-              {/* Drawer Top Bar */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800/70">
-                <div
-                  className="flex items-center gap-2.5 cursor-pointer select-none"
-                  onClick={() => handleNavClick({ label: 'Home', id: 'home' })}
-                >
-                  <div className="w-8 h-8 rounded-md overflow-hidden">
-                    <img src={pratikIcon} alt="Pratik Bhusal" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="font-bebas text-lg tracking-widest text-white animate-pulse">PRATIK BHUSAL</span>
-                </div>
-                <button
-                  onClick={() => closeDrawer()}
-                  className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-white rounded-md hover:bg-neutral-800 transition-colors cursor-pointer text-lg font-light"
-                  aria-label="Close menu"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Drawer Nav Links */}
-              <nav className="flex flex-col flex-1 justify-center px-8 gap-2">
-                {NAV_ITEMS.map(({ label, id }, i) => {
-                  const isActive = activeNav === label
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => handleNavClick({ label, id })}
-                      className={`relative text-left py-3 px-4 rounded-lg cursor-pointer transition-colors duration-200 group ${
-                        isActive ? 'bg-white/8' : 'hover:bg-neutral-800/50'
-                      }`}
-                      style={{ opacity: 0, transform: 'translateY(22px)' }}
-                      ref={(el) => {
-                        if (i === 0) firstFocusRef.current = el
-                        linkRefs.current[i] = el
-                      }}
-                    >
-                      <span className={`font-bebas text-4xl sm:text-5xl tracking-widest block leading-none ${
-                        isActive ? 'text-[#1e90ff]' : 'text-neutral-200 group-hover:text-white'
-                      }`}>
-                        {label}
-                      </span>
-                      {isActive && (
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#1e90ff] rounded-full" />
-                      )}
-                    </button>
-                  )
-                })}
-              </nav>
-
-              {/* Drawer Bottom — Hire Me + Get in Touch */}
-              <div
-                className="px-6 py-6 border-t border-neutral-800/70 flex flex-col gap-3"
-                ref={(el) => { linkRefs.current[NAV_ITEMS.length] = el }}
-                style={{ opacity: 0, transform: 'translateY(22px)' }}
+              {/* Border-free Top Right Close 'X' Button */}
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                className="absolute top-6 right-6 p-2 text-neutral-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none focus:outline-none z-20"
+                aria-label="Close menu"
               >
-                <button
-                  onClick={() => { closeDrawer(); window.open('https://wa.me/9779762519961', '_blank') }}
-                  className="w-full py-3 rounded-xl bg-neutral-900 border border-neutral-800 text-white font-medium text-sm text-center cursor-pointer hover:bg-neutral-800 transition-colors"
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-6 h-6"
                 >
-                  Hire Me
-                </button>
-                <button
-                  onClick={() => { closeDrawer(); window.open('mailto:pratikbhusal12345@gmail.com', '_blank') }}
-                  className="w-full py-3 rounded-xl bg-[#1e90ff] hover:bg-[#1a7fe0] text-white font-bold text-sm text-center cursor-pointer transition-colors flex items-center justify-center gap-2"
-                >
-                  Get in Touch
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                  </svg>
-                </button>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              {/* Drawer Links */}
+              <div className="flex flex-col space-y-6">
+                <span className="font-mono text-[10px] text-[#ff6b35] tracking-[0.25em] uppercase">
+                  [ MENU ]
+                </span>
+
+                <nav className="flex flex-col space-y-4">
+                  {NAV_ITEMS.map((item, idx) => {
+                    const isActive = activeIdx === idx
+                    return (
+                      <motion.div
+                        key={item.label}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.25, delay: 0.05 * idx }}
+                      >
+                        <Link
+                          to={item.path}
+                          onClick={() => handleNavClick(item.path)}
+                          className={`flex items-center justify-between font-bebas text-3xl tracking-wider py-1 uppercase transition-colors ${
+                            isActive
+                              ? 'text-[#1e90ff] font-bold'
+                              : 'text-neutral-300 hover:text-white'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {isActive && (
+                            <span className="w-2 h-2 rounded-full bg-[#1e90ff] shadow-[0_0_8px_rgba(30,144,255,0.8)]" />
+                          )}
+                        </Link>
+                      </motion.div>
+                    )
+                  })}
+                </nav>
               </div>
-            </div>
+
+              {/* Drawer Footer CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.35 }}
+                className="pt-8 border-t border-neutral-900 space-y-4"
+              >
+                <a
+                  href="mailto:pratikbhusal12345@gmail.com"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="group relative overflow-hidden w-full py-3.5 rounded-full border border-transparent hover:border-[#1e90ff] bg-white text-black font-bold font-mono text-xs tracking-wider uppercase flex items-center justify-center gap-3 shadow-lg cursor-pointer select-none transition-all duration-300"
+                >
+                  {/* Blue Background Fill Slide-in from Right */}
+                  <span className="absolute inset-0 bg-[#1e90ff] origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out z-0" />
+
+                  {/* Text Layer */}
+                  <span className="relative z-10 group-hover:text-white transition-colors duration-300">
+                    GET IN TOUCH
+                  </span>
+
+                  {/* Small Blue Circular Icon with Rotating Arrow */}
+                  <div className="relative z-10 w-5 h-5 rounded-full bg-[#1e90ff] group-hover:bg-white text-black flex items-center justify-center font-bold text-xs shrink-0 shadow-sm transition-all duration-300 group-hover:rotate-45">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-3 h-3 text-black group-hover:text-[#1e90ff] transition-colors duration-300"
+                    >
+                      <line x1="7" y1="17" x2="17" y2="7"></line>
+                      <polyline points="7 7 17 7 17 17"></polyline>
+                    </svg>
+                  </div>
+                </a>
+
+                <div className="text-center font-mono text-[10px] text-neutral-500 uppercase tracking-widest">
+                  PRATIK BHUSAL STUDIO
+                </div>
+              </motion.div>
+            </motion.div>
           </>
         )}
-      </header>
-
-      {/* Spacer for fixed nav */}
-      <div className="h-[60px] hidden md:block" />
+      </AnimatePresence>
     </>
   )
 }

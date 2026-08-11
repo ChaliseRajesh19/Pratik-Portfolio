@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { worksData } from '../data/worksData'
 import SEO from './SEO'
 import { gsap } from 'gsap'
@@ -7,7 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export default function WorksListing({ onNavigate }) {
+export default function WorksListing({ initialWorks }) {
+  const navigate = useNavigate()
+  const works = initialWorks && initialWorks.length > 0 ? initialWorks : worksData
+
   const [selectedCat, setSelectedCat] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
@@ -42,7 +46,7 @@ export default function WorksListing({ onNavigate }) {
   }, [])
 
   // Filter logic
-  const filteredWorks = worksData.filter((work) => {
+  const filteredWorks = works.filter((work) => {
     if (selectedCat === 'All') return true
     if (selectedCat === 'Branding') return work.category.includes('BRAND') || work.category.includes('REBRAND')
     if (selectedCat === 'Editorial') return work.category.includes('EDITORIAL') || work.category.includes('PUBLISH')
@@ -114,7 +118,7 @@ export default function WorksListing({ onNavigate }) {
         {/* ── HEADER ────────────────────────────────────────────────────── */}
         <header className="border-b border-neutral-900 pb-8 mb-10">
           <p className="font-mono text-xs text-[#ff6b35] tracking-[0.25em] uppercase mb-3">
-            [ SELECTED WORKS ]
+            [ PORTFOLIO / CASE STUDIES ]
           </p>
           <h1 className="font-bebas text-6xl sm:text-7xl lg:text-8xl tracking-wider text-white leading-none">
             WORKS
@@ -183,11 +187,11 @@ export default function WorksListing({ onNavigate }) {
         {/* ── WORKS CARD GRID ────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {filteredWorks.map((work) => (
-            <article
+            <Link
               key={work.slug}
+              to={`/works/${work.slug}`}
               ref={addToRefs}
-              className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8"
-              onClick={() => onNavigate(`/works/${work.slug}`)}
+              className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8 block"
             >
               {/* Image Frame with spring scale-up zoom hover */}
               <div className="overflow-hidden rounded-xl bg-[#0a0a0a] border border-neutral-800/80 aspect-[16/10] relative">
@@ -214,7 +218,7 @@ export default function WorksListing({ onNavigate }) {
               {/* Text Meta info */}
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[10px] text-[#ff6b35] tracking-widest uppercase">
-                  {work.client.toUpperCase()}
+                  {work.client ? work.client.toUpperCase() : ''}
                 </span>
                 <span className="font-mono text-[10px] text-neutral-500 font-bold">
                   {work.year}
@@ -224,7 +228,7 @@ export default function WorksListing({ onNavigate }) {
               <h2 className="font-bebas text-2xl sm:text-3xl text-white group-hover:text-[#1e90ff] transition-colors leading-snug tracking-wide">
                 {work.title}
               </h2>
-            </article>
+            </Link>
           ))}
         </div>
 

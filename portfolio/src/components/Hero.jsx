@@ -72,10 +72,48 @@ function CardInner({ card, isTopCard }) {
 
 export default function Hero() {
   const mobileContainerRef = useRef(null)
+  const desktopContainerRef = useRef(null)
   const card1Ref = useRef(null)
   const card2Ref = useRef(null)
   const card3Ref = useRef(null)
   const card4Ref = useRef(null)
+
+  const masterTimelineRef = useRef(null)
+  if (!masterTimelineRef.current && typeof window !== 'undefined') {
+    masterTimelineRef.current = gsap.timeline({ delay: 0.1 })
+  }
+
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 767px)').matches
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (isMobile || prefersReducedMotion || !desktopContainerRef.current) return
+
+    // Ensure initial animation plays on mount so Hero is NEVER blank on load
+    if (masterTimelineRef.current) {
+      masterTimelineRef.current.play()
+    }
+
+    const ctx = gsap.context(() => {
+      if (masterTimelineRef.current) {
+        ScrollTrigger.create({
+          trigger: desktopContainerRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          onLeave: () => {
+            // When scrolling down past hero, reset timeline to frame 0
+            masterTimelineRef.current?.pause(0)
+          },
+          onEnterBack: () => {
+            // When scrolling back UP into hero, restart entrance animation
+            masterTimelineRef.current?.restart()
+          },
+        })
+      }
+    }, desktopContainerRef)
+
+    return () => ctx.revert()
+  }, [])
 
   useEffect(() => {
     // Media query check: only run GSAP ScrollTrigger card pinning on screens < 768px
@@ -152,17 +190,17 @@ export default function Hero() {
     <section id="home" className="relative min-h-screen bg-[#050505]">
       
       {/* ══ DESKTOP HERO VIEW (768px and above) ════════════════════════ */}
-      <div className="hidden md:flex min-h-screen flex-col justify-between px-6 sm:px-10 lg:px-14 pt-16 sm:pt-20 pb-4 sm:pb-6 overflow-hidden">
+      <div ref={desktopContainerRef} className="hidden md:flex min-h-screen flex-col justify-between px-6 sm:px-10 lg:px-14 pt-16 sm:pt-20 pb-4 sm:pb-6 overflow-hidden">
         {/* Center Main Stage */}
         <div className="relative z-10 grid lg:grid-cols-12 gap-6 lg:gap-8 items-center my-auto py-3 sm:py-6">
           <div className="lg:col-span-7">
-            <HeroTitle />
+            <HeroTitle timeline={masterTimelineRef.current} />
           </div>
           <div className="lg:col-span-5">
-            <HeroCard />
+            <HeroCard timeline={masterTimelineRef.current} />
           </div>
         </div>
-        <HeroFooter />
+        <HeroFooter timeline={masterTimelineRef.current} />
       </div>
 
       {/* ══ MOBILE HERO VIEW (Below 768px Breakpoint Switch) ════════════ */}
@@ -171,8 +209,8 @@ export default function Hero() {
         className="md:hidden flex flex-col justify-between min-h-screen pt-[88px] pb-4 px-4 bg-[#050505] overflow-hidden"
       >
         {/* Enlarged Name block with offset positioning */}
-        <div className="w-full text-left pl-2 mb-2">
-          <h1 className="font-bebas tracking-tighter leading-[0.76] flex flex-col">
+        <div className="w-full text-left pl-2 mb-2 pt-2">
+          <h1 className="font-bebas tracking-tighter leading-[0.86] flex flex-col">
             <span className="text-[25vw] sm:text-[21vw] text-white">PRATIK</span>
             <span className="text-[25vw] sm:text-[21vw] text-neutral-400/90 pl-[12vw] sm:pl-[10vw]">BHUSAL</span>
           </h1>

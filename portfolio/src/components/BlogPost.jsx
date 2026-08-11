@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { blogPosts } from '../data/blogData'
 import SEO from './SEO'
 
@@ -48,34 +49,33 @@ function renderMarkdownContent(content) {
     if (trimmed.startsWith('- ')) {
       inList = true
       listItems.push(trimmed.substring(2))
-      return
-    } else {
-      if (inList) pushList()
-    }
-
-    if (trimmed.startsWith('### ')) {
-      elements.push(
-        <h3 key={index} id={slugify(trimmed.substring(4))} className="font-bebas text-2xl sm:text-3xl text-white mt-8 mb-4 tracking-wide scroll-mt-24">
-          {trimmed.substring(4)}
-        </h3>
-      )
     } else if (trimmed.startsWith('## ')) {
+      if (inList) pushList()
+      const text = trimmed.substring(3)
       elements.push(
-        <h2 key={index} id={slugify(trimmed.substring(3))} className="font-bebas text-3xl sm:text-4xl text-white mt-10 mb-4 tracking-wide border-b border-neutral-900 pb-2 scroll-mt-24">
-          {trimmed.substring(3)}
+        <h2 key={index} id={slugify(text)} className="font-bebas text-3xl sm:text-4xl text-white tracking-wide mt-10 mb-4 border-b border-neutral-900 pb-2">
+          {text}
         </h2>
       )
-    } else if (trimmed.startsWith('> ')) {
+    } else if (trimmed.startsWith('### ')) {
+      if (inList) pushList()
+      const text = trimmed.substring(4)
       elements.push(
-        <blockquote key={index} className="border-l-4 border-[#ff6b35] pl-6 my-8 py-2 text-xl sm:text-2xl text-neutral-200 italic font-serif leading-relaxed">
-          &ldquo;{trimmed.substring(2).replace(/"/g, '')}&rdquo;
+        <h3 key={index} id={slugify(text)} className="font-bebas text-2xl sm:text-3xl text-neutral-200 tracking-wide mt-8 mb-3">
+          {text}
+        </h3>
+      )
+    } else if (trimmed.startsWith('> ')) {
+      if (inList) pushList()
+      elements.push(
+        <blockquote key={index} className="border-l-2 border-[#1e90ff] pl-6 my-6 py-2 italic font-sans text-neutral-300 text-lg sm:text-xl bg-neutral-900/30 rounded-r-lg">
+          {trimmed.substring(2)}
         </blockquote>
       )
-    } else if (trimmed === '---') {
-      elements.push(<hr key={index} className="border-neutral-900 my-8" />)
     } else if (trimmed.length > 0) {
+      if (inList) pushList()
       elements.push(
-        <p key={index} className="text-neutral-300 font-sans text-base sm:text-lg leading-relaxed mb-6">
+        <p key={index} className="my-4 text-neutral-300 font-sans text-base sm:text-lg leading-relaxed">
           {trimmed}
         </p>
       )
@@ -86,9 +86,11 @@ function renderMarkdownContent(content) {
   return elements
 }
 
-export default function BlogPost({ slug, onNavigate }) {
+export default function BlogPost({ slug, initialBlogs }) {
+  const navigate = useNavigate()
+  const blogs = initialBlogs && initialBlogs.length > 0 ? initialBlogs : blogPosts
   const [copied, setCopied] = useState(false)
-  const post = blogPosts.find((p) => p.slug === slug)
+  const post = blogs.find((p) => p.slug === slug)
 
   // Scroll to top on mount
   useEffect(() => {
@@ -102,18 +104,18 @@ export default function BlogPost({ slug, onNavigate }) {
         <p className="text-neutral-400 font-mono text-sm uppercase tracking-wider mb-8">
           Post Not Found
         </p>
-        <button
-          onClick={() => onNavigate('/blog')}
+        <Link
+          to="/blog"
           className="px-6 py-2.5 rounded-lg border border-neutral-800 text-xs font-mono text-neutral-400 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
         >
           BACK TO JOURNAL
-        </button>
+        </Link>
       </div>
     )
   }
 
   const headers = extractHeaders(post.content)
-  const relatedPosts = blogPosts.filter((p) => p.slug !== slug).slice(0, 2)
+  const relatedPosts = blogs.filter((p) => p.slug !== slug).slice(0, 2)
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const currentUrl = `${siteUrl}/blog/${post.slug}`
 
@@ -136,13 +138,13 @@ export default function BlogPost({ slug, onNavigate }) {
       />
 
       {/* Back button positioned in top-left corner */}
-      <button
-        onClick={() => onNavigate('/blog')}
-        className="absolute left-6 top-[88px] sm:left-10 lg:left-14 group flex items-center gap-2 text-xs font-mono text-neutral-500 hover:text-white transition-colors cursor-pointer z-20"
+      <Link
+        to="/blog"
+        className="absolute left-6 top-[72px] sm:left-10 lg:left-14 group flex items-center gap-2 text-[13px] font-mono font-bold text-neutral-400 hover:text-white transition-colors cursor-pointer z-20"
       >
-        <span className="group-hover:-translate-x-1 transition-transform">←</span>
+        <span className="group-hover:-translate-x-1 transition-transform text-sm">←</span>
         BACK TO JOURNAL
-      </button>
+      </Link>
 
       <div className="max-w-6xl mx-auto">
 
@@ -268,10 +270,10 @@ export default function BlogPost({ slug, onNavigate }) {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             {relatedPosts.map((related) => (
-              <article
+              <Link
                 key={related.slug}
-                onClick={() => onNavigate(`/blog/${related.slug}`)}
-                className="group cursor-pointer flex flex-col space-y-3"
+                to={`/blog/${related.slug}`}
+                className="group cursor-pointer flex flex-col space-y-3 block"
               >
                 <div className="overflow-hidden rounded-xl bg-[#0a0a0a] border border-neutral-800/80 aspect-[16/10]">
                   <img
@@ -282,14 +284,14 @@ export default function BlogPost({ slug, onNavigate }) {
                   />
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono text-[#ff6b35] font-semibold tracking-wider">
-                  <span>{related.category.toUpperCase()}</span>
+                  <span>{related.category ? related.category.toUpperCase() : ''}</span>
                   <span>·</span>
                   <span className="text-neutral-500">{related.readTime}</span>
                 </div>
                 <h4 className="font-bebas text-xl text-white group-hover:text-[#1e90ff] transition-colors leading-snug tracking-wide">
                   {related.title}
                 </h4>
-              </article>
+              </Link>
             ))}
           </div>
         </section>

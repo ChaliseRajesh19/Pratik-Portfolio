@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Mograph';
+  src: url('./assets/Mograph/Mograph.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @layer utilities {
   .font-bebas {
-    font-family: 'Bebas Neue', display, sans-serif;
+    font-family: 'Mograph', 'Bebas Neue', display, sans-serif;
+  }
+  .font-mograph {
+    font-family: 'Mograph', sans-serif;
   }
   .font-space {
     font-family: 'Space Mono', monospace;

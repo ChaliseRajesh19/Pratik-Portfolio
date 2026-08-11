@@ -1,0 +1,91 @@
+:root {
+  /* Admin Design System Variables */
+  --admin-bg: #09090b;
+  --admin-surface: #18181b;
+  --admin-surface-elevated: #27272a;
+  --admin-border: #3f3f46;
+  --admin-border-subtle: #27272a;
+  
+  --admin-text-primary: #fafafa;
+  --admin-text-secondary: #a1a1aa;
+  --admin-text-muted: #71717a;
+  
+  --admin-accent-primary: #6366f1;
+  --admin-accent-hover: #818cf8;
+  
+  --admin-success: #22c55e;
+  --admin-warning: #f59e0b;
+  --admin-destructive: #ef4444;
+  --admin-info: #3b82f6;
+
+  --admin-radius-card: 8px;
+  --admin-radius-input: 6px;
+  --admin-radius-modal: 10px;
+}
+
+/* Scrollbar styling for admin */
+.admin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.admin-scroll::-webkit-scrollbar-track {
+  background: var(--admin-bg);
+}
+.admin-scroll::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+  border-radius: 4px;
+}
+.admin-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text-muted);
+}
+
+/* Focus glow styles for form inputs */
+.admin-input-focus {
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.admin-input-focus:focus-within, .admin-input-focus:focus {
+  outline: none;
+  border-color: var(--admin-accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.admin-skeleton {
+  background: linear-gradient(90deg, 
+    var(--admin-surface-elevated) 25%, 
+    var(--admin-border) 50%, 
+    var(--admin-surface-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--admin-radius-card);
+}
+
+/* Toast utility classes */
+.admin-toast-container {
+  pointer-events: none;
+}
+.admin-toast {
+  pointer-events: auto;
+}
+
+/* Disable animations for prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
