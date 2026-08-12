@@ -2,6 +2,7 @@ import pratikIcon from '../assets/Pratik icon.png'
 
 export const blogPosts = [
   {
+    id: 1,
     title: "HOW TO BRIEF A DESIGNER: A STEP-BY-STEP STRATEGY",
     slug: "how-to-brief-a-designer",
     excerpt: "A comprehensive guide on creating clear, outcome-focused creative briefs that minimize feedback cycles and drive alignment.",
@@ -66,6 +67,7 @@ A visual moodboard is often the fastest way to align on aesthetic direction.
     `
   },
   {
+    id: 2,
     title: "THE GEOMETRY OF TYPOGRAPHY: BALANCING FORM & FUNCTION",
     slug: "geometry-of-typography",
     excerpt: "Exploring the mathematical systems behind elegant type scaling, kerning ratios, and layout readability on modern screens.",
@@ -116,6 +118,7 @@ The space between letters (kerning) and the vertical space between lines (leadin
     `
   },
   {
+    id: 3,
     title: "CREATING MEMORABLE BRAND SYSTEMS IN 2026",
     slug: "creating-memorable-brand-systems",
     excerpt: "How to design adaptive, holistic brand identities that translate across digital screens, print packaging, and spatial environments.",
@@ -161,6 +164,7 @@ Custom patterns and grid alignments are the unsung heroes of holistic brand iden
     `
   },
   {
+    id: 4,
     title: "THE SHIFT TO MINIMALIST PACKAGING DESIGN",
     slug: "shift-to-minimalist-packaging",
     excerpt: "An analysis of consumer psychology and shelf aesthetic shifts towards organic shapes and clean typography in packaging design.",

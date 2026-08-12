@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import pratikIcon from '../assets/Pratik icon.png'
+import { useContent } from '../context/ContentContext'
 
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
@@ -11,7 +12,15 @@ const NAV_ITEMS = [
   { label: 'Contact', path: '/#contact' },
 ]
 
+const getWhatsappUrl = (val) => {
+  if (!val) return 'https://wa.me/9779800000000'
+  if (val.startsWith('http://') || val.startsWith('https://')) return val
+  const cleaned = val.replace(/[^\d+]/g, '')
+  return `https://wa.me/${cleaned.replace('+', '')}`
+}
+
 export default function Navbar() {
+  const { settings } = useContent()
   const location = useLocation()
   const currentPath = location.pathname
   const hash = location.hash
@@ -177,10 +186,10 @@ export default function Navbar() {
       {/* ── 2. MAIN NAVIGATION HEADER (Premium Dark Editorial Glass Bar) ─ */}
       <header
         style={{ zIndex: 999999 }}
-        className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-auto ${
           showFullNav
-            ? 'bg-[#0c0c0c]/95 border-b border-neutral-800/90 py-3 sm:py-4 shadow-2xl backdrop-blur-lg pointer-events-auto'
-            : 'bg-transparent border-transparent shadow-none py-2.5 sm:py-3 pointer-events-none'
+            ? 'bg-[#0c0c0c]/95 border-b border-neutral-800/90 py-3 sm:py-4 shadow-2xl backdrop-blur-lg'
+            : 'bg-[#0c0c0c]/95 border-b border-neutral-800/90 py-3 sm:py-3 shadow-2xl backdrop-blur-lg md:bg-transparent md:border-transparent md:shadow-none'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between relative">
@@ -262,47 +271,50 @@ export default function Navbar() {
           >
             {/* Custom HIRE ME Button with sliding hover fill from right */}
             <a
-              href="mailto:pratikbhusal12345@gmail.com"
+              href={`mailto:${settings?.contactEmail || 'pratikbhusal12345@gmail.com'}`}
+              data-magnetic="true"
               className="group relative overflow-hidden px-4 py-2 rounded-full border border-neutral-800 hover:border-[#1e90ff] bg-transparent text-neutral-400 hover:text-white font-bold font-mono text-xs tracking-wider uppercase cursor-pointer select-none transition-all duration-300"
             >
               {/* Blue Background Fill Slide-in from Right */}
               <span className="absolute inset-0 bg-[#1e90ff] origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out z-0" />
 
-              <span className="relative z-10">HIRE ME</span>
+              <span className="magnetic-inner relative z-10 block">HIRE ME</span>
             </a>
 
-            <motion.div
-              ref={btnRef}
-              onMouseMove={handleMouseMoveCTA}
-              onMouseLeave={handleMouseLeaveCTA}
-              animate={{ x: magneticPos.x, y: magneticPos.y }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            <div
+              data-magnetic="true"
+              className="inline-block"
             >
               <a
-                href="mailto:pratikbhusal12345@gmail.com"
+                href={getWhatsappUrl(settings?.whatsappNumber)}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white hover:bg-neutral-100 text-black font-bold font-mono text-xs tracking-wider uppercase flex items-center gap-2.5 transition-all shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_6px_28px_rgba(255,255,255,0.3)] cursor-pointer"
               >
-                <span>GET IN TOUCH</span>
+                <span className="magnetic-inner flex items-center gap-2.5">
+                  <span>LET&apos;S TALK</span>
 
-                {/* Small Blue Circular Icon with Rotating Arrow */}
-                <div className="w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-[#1e90ff] text-black flex items-center justify-center font-bold text-xs shrink-0 shadow-sm transition-transform duration-200 group-hover:rotate-45">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-black"
-                  >
-                    <line x1="7" y1="17" x2="17" y2="7"></line>
-                    <polyline points="7 7 17 7 17 17"></polyline>
-                  </svg>
-                </div>
+                  {/* Small Blue Circular Icon with Rotating Arrow */}
+                  <div className="w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-[#1e90ff] text-black flex items-center justify-center font-bold text-xs shrink-0 shadow-sm transition-transform duration-200 group-hover:rotate-45">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-black"
+                    >
+                      <line x1="7" y1="17" x2="17" y2="7"></line>
+                      <polyline points="7 7 17 7 17 17"></polyline>
+                    </svg>
+                  </div>
+                </span>
               </a>
-            </motion.div>
+            </div>
           </div>
+
 
           {/* ── MOBILE BAR (< 768px): BRAND + HAMBURGER ────────────────────── */}
           <div className="flex md:hidden items-center justify-between w-full pointer-events-auto">
@@ -358,7 +370,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsMobileOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md md:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md md:hidden pointer-events-auto"
             />
 
             {/* Mobile Drawer */}
@@ -368,7 +380,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[#080808] border-l border-neutral-800 flex flex-col justify-between p-8 pt-20 md:hidden shadow-2xl overflow-y-auto relative"
+              className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-[#0a0a0a] border-l border-neutral-800 flex flex-col justify-between p-6 sm:p-8 pt-20 md:hidden shadow-2xl overflow-y-auto pointer-events-auto"
             >
               {/* Border-free Top Right Close 'X' Button */}
               <button
@@ -435,7 +447,9 @@ export default function Navbar() {
                 className="pt-8 border-t border-neutral-900 space-y-4"
               >
                 <a
-                  href="mailto:pratikbhusal12345@gmail.com"
+                  href={getWhatsappUrl(settings?.whatsappNumber)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setIsMobileOpen(false)}
                   className="group relative overflow-hidden w-full py-3.5 rounded-full border border-transparent hover:border-[#1e90ff] bg-white text-black font-bold font-mono text-xs tracking-wider uppercase flex items-center justify-center gap-3 shadow-lg cursor-pointer select-none transition-all duration-300"
                 >
@@ -444,7 +458,7 @@ export default function Navbar() {
 
                   {/* Text Layer */}
                   <span className="relative z-10 group-hover:text-white transition-colors duration-300">
-                    GET IN TOUCH
+                    LET&apos;S TALK (WHATSAPP)
                   </span>
 
                   {/* Small Blue Circular Icon with Rotating Arrow */}

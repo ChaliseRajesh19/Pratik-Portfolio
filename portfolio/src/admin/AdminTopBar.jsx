@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ENV } from '../config/env';
 
 const TAB_TITLES = {
   dashboard: 'Dashboard',
@@ -13,7 +14,7 @@ const TAB_TITLES = {
 };
 
 export default function AdminTopBar({ onOpenCommandPalette, activeTab }) {
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com';
+  const adminEmail = ENV.ADMIN_EMAIL;
   const initial = adminEmail.charAt(0).toUpperCase();
 
   const title = TAB_TITLES[activeTab] || 'Dashboard';

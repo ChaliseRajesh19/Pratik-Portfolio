@@ -80,6 +80,7 @@ export default function BlogListing({ initialBlogs }) {
           <Link
             to={`/blog/${featuredPost.slug}`}
             ref={addToRefs}
+            data-cursor="READ"
             className="group cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-8 items-center border-b border-neutral-900 pb-12 mb-12 block"
           >
             {/* Featured Image */}
@@ -144,6 +145,7 @@ export default function BlogListing({ initialBlogs }) {
               key={post.slug}
               to={`/blog/${post.slug}`}
               ref={addToRefs}
+              data-cursor="READ"
               className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8 block"
             >
               {/* Thumbnail */}

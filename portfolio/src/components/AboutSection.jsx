@@ -17,65 +17,65 @@ export default function AboutSection() {
   const [isPortraitHovered, setIsPortraitHovered] = useState(false)
 
   useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
     const ctx = gsap.context(() => {
-      // 1. Headline Lines In-Place Opacity Line-by-Line Reveal with Reverse on Scroll Up
+      // 1. Headline Lines Line-by-Line Kinetic Slide & Fade Reveal (Bi-directional Reverse)
       const headlineLines = [line1Ref.current, line2Ref.current, line3Ref.current].filter(Boolean)
       if (headlineLines.length > 0) {
-        gsap.fromTo(
-          headlineLines,
-          { opacity: 0 },
-          {
-            opacity: 1,
-            duration: 1.1,
-            stagger: 0.2,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: 'top 75%',
-              end: 'bottom 15%',
-              toggleActions: 'play reverse play reverse',
-            },
-          }
-        )
+        gsap.set(headlineLines, { opacity: 0, y: 70, scale: 0.98 })
+        gsap.to(headlineLines, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1.15,
+          stagger: 0.2,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 75%',
+            end: 'bottom 15%',
+            toggleActions: 'play reverse play reverse', // Reverses when scrolling up/down
+          },
+        })
       }
 
       // 2. Dome Arch Portrait Reveal
       if (portraitRef.current) {
-        gsap.fromTo(
-          portraitRef.current,
-          { opacity: 0 },
-          {
-            opacity: 1,
-            duration: 1.2,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: portraitRef.current,
-              start: 'top 80%',
-              end: 'bottom 15%',
-              toggleActions: 'play reverse play reverse',
-            },
-          }
-        )
+        gsap.set(portraitRef.current, { opacity: 0, y: 60, scale: 0.94 })
+        gsap.to(portraitRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1.25,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: portraitRef.current,
+            start: 'top 80%',
+            end: 'bottom 15%',
+            toggleActions: 'play reverse play reverse',
+          },
+        })
       }
 
       // 3. Biography Text Blocks Reveal
       if (bioRef.current) {
-        gsap.fromTo(
-          bioRef.current.children,
-          { opacity: 0 },
-          {
-            opacity: 1,
-            duration: 1,
-            stagger: 0.2,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: bioRef.current,
-              start: 'top 80%',
-              end: 'bottom 15%',
-              toggleActions: 'play reverse play reverse',
-            },
-          }
-        )
+        const bioEls = Array.from(bioRef.current.children)
+        gsap.set(bioEls, { opacity: 0, y: 40 })
+        gsap.to(bioEls, {
+          opacity: 1,
+          y: 0,
+          duration: 1.0,
+          stagger: 0.18,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: bioRef.current,
+            start: 'top 80%',
+            end: 'bottom 15%',
+            toggleActions: 'play reverse play reverse',
+          },
+        })
       }
     }, sectionRef)
 
@@ -103,21 +103,21 @@ export default function AboutSection() {
       <div className="py-8 sm:py-12 lg:py-16 space-y-2 sm:space-y-4 max-w-7xl mx-auto w-full">
         <h1
           ref={line1Ref}
-          className="font-bebas text-5xl sm:text-7xl lg:text-8xl tracking-wider text-white leading-none opacity-0"
+          className="font-bebas text-5xl sm:text-7xl lg:text-8xl tracking-wider text-white leading-none"
         >
           I DESIGN VISUAL LANGUAGES
         </h1>
 
         <h2
           ref={line2Ref}
-          className="font-bebas text-4xl sm:text-6xl lg:text-7xl tracking-wider text-[#ff6b35] leading-none pl-6 sm:pl-24 lg:pl-36 opacity-0"
+          className="font-bebas text-4xl sm:text-6xl lg:text-7xl tracking-wider text-[#ff6b35] leading-none pl-6 sm:pl-24 lg:pl-36"
         >
           FOR IDEAS THAT DESERVE
         </h2>
 
         <h3
           ref={line3Ref}
-          className="font-bebas text-4xl sm:text-6xl lg:text-7xl tracking-wider text-neutral-400 leading-none text-right pr-4 sm:pr-16 opacity-0"
+          className="font-bebas text-4xl sm:text-6xl lg:text-7xl tracking-wider text-neutral-400 leading-none text-right pr-4 sm:pr-16"
         >
           TO BE REMEMBERED.
         </h3>
@@ -131,7 +131,7 @@ export default function AboutSection() {
             ref={portraitRef}
             onMouseEnter={() => setIsPortraitHovered(true)}
             onMouseLeave={() => setIsPortraitHovered(false)}
-            className="relative w-full max-w-sm sm:max-w-md aspect-[4/5] rounded-t-full overflow-hidden bg-[#0a0a0a] shadow-[0_30px_75px_rgba(0,0,0,0.95)] group cursor-pointer opacity-0"
+            className="relative w-full max-w-sm sm:max-w-md aspect-[4/5] rounded-t-full overflow-hidden bg-[#0a0a0a] shadow-[0_30px_75px_rgba(0,0,0,0.95)] group cursor-pointer"
           >
             {/* Ambient Backlight Aura on Hover */}
             <motion.div
@@ -160,15 +160,15 @@ export default function AboutSection() {
 
         {/* RIGHT COLUMN: BIOGRAPHY WITH MIDDLE VERTICAL ALIGNMENT (PRATIK BHUSAL) */}
         <div ref={bioRef} className="lg:col-span-6 space-y-6">
-          <span className="text-xs font-mono text-[#ff6b35] tracking-widest font-semibold uppercase block opacity-0">
+          <span className="text-xs font-mono text-[#ff6b35] tracking-widest font-semibold uppercase block">
             BIOGRAPHY // PRATIK BHUSAL
           </span>
 
-          <p className="text-base sm:text-lg text-white font-sans leading-relaxed font-normal opacity-0 max-w-xl">
+          <p className="text-base sm:text-lg text-white font-sans leading-relaxed font-normal max-w-xl">
             Currently operating at the intersection of branding, typography, and raw spatial design. Building systems that do not merely inform, but establish structural memory.
           </p>
 
-          <p className="text-xs sm:text-sm text-neutral-400 font-sans leading-relaxed opacity-0 max-w-xl">
+          <p className="text-xs sm:text-sm text-neutral-400 font-sans leading-relaxed max-w-xl">
             Operating internationally. Collaborating with architectural studios, luxury fashion houses, and progressive cultural institutions seeking stark, permanent aesthetic signatures.
           </p>
         </div>

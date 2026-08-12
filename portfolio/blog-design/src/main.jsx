@@ -1,0 +1,61 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { RouterProvider, Route, createBrowserRouter, createRoutesFromElements } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import './index.css'
+import App from './App.jsx'
+import Home from './pages/Home.jsx';
+import About from "./pages/About.jsx";
+import Contact from "./pages/Contact.jsx";
+import Portfolio from './pages/Portfolio.jsx';
+import Service from "./pages/Service.jsx"
+import Blog from "./pages/Blog.jsx";
+import BlogPost from "./pages/BlogPost.jsx";
+import AdminLogin from "./pages/AdminLogin.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
+import RequireAuth from "./components/admin/RequireAuth.jsx";
+import WorkPages from "./pages/WorkPages.jsx";
+import TestimonialsPage from "./pages/TestimonialsPage.jsx";
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path='/' element={<App />}>
+        <Route index element={<Home />}/>
+        <Route path='about' element={<About />}/>
+        <Route path='service' element={<Service />}/>
+        <Route path='contact' element={<Contact/>} />
+        <Route path='portfolio' element={<Portfolio/>} />
+        <Route path='portfolio/:category' element={<WorkPages/>} />
+        <Route path='blogs' element={<Blog/>} />
+        <Route path='blog/:id' element={<BlogPost/>} />
+        <Route path='testimonials' element={<TestimonialsPage/>} />
+      </Route>
+
+      <Route path="/admin">
+        <Route index element={<AdminLogin />} />
+        <Route path="login" element={<AdminLogin />} />
+        <Route element={<RequireAuth />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+        </Route>
+      </Route>
+    </>
+  )
+)
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <RouterProvider router={router} />
+    <Toaster
+      position="bottom-right"
+      toastOptions={{
+        style: {
+          background: '#0f172a',
+          color: '#f8fafc',
+          border: '1px solid rgba(51,65,85,0.5)',
+        },
+        success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+        error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+      }}
+    />
+  </StrictMode>,
+)

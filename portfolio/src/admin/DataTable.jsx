@@ -135,8 +135,10 @@ export default function DataTable({
     );
   }
 
-  const allSelected = paginatedData.length > 0 && paginatedData.every(item => selectedIds.has(item.id));
-  const someSelected = paginatedData.some(item => selectedIds.has(item.id)) && !allSelected;
+  const getItemId = (item) => item.id ?? item.slug ?? item.title;
+
+  const allSelected = paginatedData.length > 0 && paginatedData.every(item => selectedIds.has(getItemId(item)));
+  const someSelected = paginatedData.some(item => selectedIds.has(getItemId(item))) && !allSelected;
 
   return (
     <div className="w-full bg-zinc-900 border border-zinc-800 rounded-lg shadow-sm flex flex-col overflow-hidden">
@@ -187,7 +189,7 @@ export default function DataTable({
             {paginatedData.length > 0 ? (
               paginatedData.map((item) => (
                 <tr
-                  key={item.id}
+                  key={getItemId(item)}
                   className="group hover:bg-zinc-800/50 transition-colors"
                 >
                   {onSelectToggle && (
@@ -195,8 +197,8 @@ export default function DataTable({
                       <input
                         type="checkbox"
                         className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-indigo-500"
-                        checked={selectedIds.has(item.id)}
-                        onChange={() => onSelectToggle(item.id)}
+                        checked={selectedIds.has(getItemId(item))}
+                        onChange={() => onSelectToggle(getItemId(item))}
                       />
                     </td>
                   )}

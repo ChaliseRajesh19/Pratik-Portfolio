@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Plus, ChevronUp, ChevronDown, Check, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import {
+  Upload, X, Plus, ChevronUp, ChevronDown, Check, Image as ImageIcon, ArrowLeft,
+  SlidersHorizontal, Search, Sparkles, Globe, Calendar, Clock, Tag, Folder, Eye, Layers
+} from 'lucide-react';
 import { contentServices } from '../services/contentService';
+import RichTextEditor from './RichTextEditor';
 
 const getSeoTitleColor = (length) => {
-  if (length === 0) return '#71717a'; // gray
+  if (length === 0) return '#71717a';
   if (length < 30) return '#71717a';
-  if (length <= 60) return '#22c55e'; // green
-  if (length <= 70) return '#f59e0b'; // orange
-  return '#ef4444'; // red
+  if (length <= 60) return '#22c55e';
+  if (length <= 70) return '#f59e0b';
+  return '#ef4444';
 };
 
 const getSeoDescColor = (length) => {
@@ -52,23 +56,23 @@ const ImageUpload = ({ label, value, onChange, className = '' }) => {
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {label && <label className="block text-sm font-medium text-zinc-400">{label}</label>}
+      {label && <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">{label}</label>}
       {value ? (
-        <div className="relative rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800/50">
-          <img src={value} alt="Preview" className="w-full h-auto max-h-64 object-cover" />
+        <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 group">
+          <img src={value} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
           <button
             type="button"
             onClick={() => onChange('')}
-            className="absolute top-2 right-2 p-1.5 bg-black/60 text-zinc-300 hover:text-white rounded-md backdrop-blur-sm"
+            className="absolute top-2 right-2 p-1.5 bg-black/70 text-zinc-300 hover:text-white rounded-lg backdrop-blur-md transition-colors"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition-colors bg-zinc-900/30">
-          <Upload className="text-zinc-500 mb-3" size={24} />
-          <span className="text-sm text-zinc-400">
-            {uploading ? 'Uploading...' : 'Click or drag image to upload'}
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 hover:border-sky-500/50 rounded-xl p-6 text-center cursor-pointer transition-all bg-zinc-950/60 group">
+          <Upload className="text-zinc-500 group-hover:text-sky-400 mb-2 transition-colors" size={22} />
+          <span className="text-xs text-zinc-300 font-medium">
+            {uploading ? 'Uploading graphic...' : 'Click or drop image file'}
           </span>
           <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={uploading} />
         </label>
@@ -97,586 +101,519 @@ const TagsInput = ({ tags = [], onChange }) => {
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 mb-2">
-        {tags.map((tag, idx) => (
-          <span key={idx} className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-zinc-300">
+      <div className="flex flex-wrap gap-1.5 p-2 bg-zinc-950 border border-zinc-800 rounded-xl min-h-[42px]">
+        {tags.map((tag, index) => (
+          <span key={index} className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 text-zinc-200 text-xs font-mono rounded-lg border border-zinc-700">
             {tag}
-            <button type="button" onClick={() => removeTag(idx)} className="text-zinc-500 hover:text-zinc-300">
-              <X size={14} />
+            <button type="button" onClick={() => removeTag(index)} className="hover:text-red-400">
+              <X size={12} />
             </button>
           </span>
         ))}
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={tags.length === 0 ? "Type tag and press Enter..." : ""}
+          className="flex-1 bg-transparent border-none focus:outline-none text-xs text-zinc-100 placeholder-zinc-500 min-w-[120px]"
+        />
       </div>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type and press Enter to add..."
-        className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-shadow"
-      />
     </div>
   );
 };
 
+const GalleryManager = ({ formData, setFormData }) => {
+  const [uploading, setUploading] = useState(false);
+  const galleryList = Array.isArray(formData.gallery) ? formData.gallery : [];
 
-export default function EditForm({ item, type, onCancel, onSave, allWorks = [], allBlogs = [] }) {
-  const [formData, setFormData] = useState(() => ({
-    ...item,
-    services: item.services || [],
-    gallery: item.gallery || [],
-    caseStudy: item.caseStudy || { sections: [] }
-  }));
-  
-  const originalDataRef = useRef(formData);
-  const [activeTab, setActiveTab] = useState('Content');
-  const [isSaved, setIsSaved] = useState(false);
-  
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalDataRef.current);
-
-  const getTabs = () => {
-    if (type === 'works') return ['Content', 'Case Study', 'Gallery', 'SEO'];
-    if (type === 'blogs') return ['Content', 'SEO'];
-    return [];
-  };
-  const tabs = getTabs();
-
-  // Auto-save draft
-  useEffect(() => {
-    const draftKey = `admin_draft_${type}_${item.id || 'new'}`;
-    const interval = setInterval(() => {
-      if (hasChanges) {
-        localStorage.setItem(draftKey, JSON.stringify(formData));
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2000);
-      }
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [formData, type, item.id, hasChanges]);
-
-  const handleChange = (e) => {
-    const { name, value, type: inputType, checked } = e.target;
-    const val = inputType === 'checkbox' ? checked : value;
-    
-    setFormData(prev => {
-      const next = { ...prev, [name]: val };
-      if (name === 'title' && (!prev.slug || prev.slug === generateSlug(prev.title))) {
-        next.slug = generateSlug(val);
-      }
-      return next;
-    });
-  };
-
-  const handleNestedChange = (parent, field, value) => {
-    setFormData(prev => ({
+  const updateGallery = (newList) => {
+    setFormData((prev) => ({
       ...prev,
-      [parent]: {
-        ...(prev[parent] || {}),
-        [field]: value
-      }
+      gallery: newList,
+      images: newList.map((item) => (typeof item === 'string' ? item : item.url)).filter(Boolean),
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleBatchUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        const url = await contentServices.uploadFile(file);
+        if (url) uploadedUrls.push(url);
+      }
+
+      const newGalleryItems = uploadedUrls.map((url) => ({
+        url,
+        caption: '',
+        alt: '',
+      }));
+
+      updateGallery([...galleryList, ...newGalleryItems]);
+    } catch (err) {
+      console.error('Batch upload error:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    const newList = galleryList.filter((_, i) => i !== index);
+    updateGallery(newList);
+  };
+
+  const handleMoveImage = (fromIdx, toIdx) => {
+    if (toIdx < 0 || toIdx >= galleryList.length) return;
+    const newList = [...galleryList];
+    const [moved] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, moved);
+    updateGallery(newList);
+  };
+
+  const handleCaptionChange = (idx, caption) => {
+    const newList = [...galleryList];
+    newList[idx] = { ...newList[idx], caption };
+    updateGallery(newList);
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 text-zinc-50">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50 sticky top-0 z-10 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <button onClick={onCancel} className="p-2 text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 rounded-lg transition-colors">
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h2 className="font-semibold text-lg capitalize flex items-center gap-2">
-              {item.id ? 'Edit' : 'New'} {type.slice(0, -1)}
-              {type === 'works' || type === 'blogs' ? (
-                <span className={`px-2 py-0.5 text-xs rounded-full border ${formData.status === 'Published' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
-                  {formData.status || 'Draft'}
-                </span>
-              ) : null}
-            </h2>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 bg-zinc-900/90 border border-zinc-800 rounded-2xl shadow-xl">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+            <ImageIcon size={18} className="text-sky-400" /> Project Image Gallery & Scrubber Assets
+          </h3>
+          <p className="text-xs text-zinc-400 mt-1">
+            Upload multiple artwork graphics. These images populate project detail pages and desktop hover scrubbers.
+          </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <AnimatePresence>
-            {isSaved && (
-              <motion.span 
-                initial={{ opacity: 0, scale: 0.9 }} 
-                animate={{ opacity: 1, scale: 1 }} 
-                exit={{ opacity: 0 }}
-                className="text-xs text-zinc-400 flex items-center gap-1"
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all shadow-lg shadow-sky-600/20 shrink-0">
+          <Upload size={15} />
+          {uploading ? 'Uploading...' : '+ Add Gallery Images'}
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleBatchUpload}
+            disabled={uploading}
+          />
+        </label>
+      </div>
+
+      {galleryList.length === 0 && (
+        <label className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-800 hover:border-sky-500/50 bg-zinc-950/40 rounded-2xl cursor-pointer transition-all group">
+          <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 group-hover:text-sky-400 group-hover:scale-110 transition-all shadow-md">
+            <Upload size={20} />
+          </div>
+          <span className="text-sm font-medium text-zinc-200 mt-4">No gallery images uploaded</span>
+          <span className="text-xs text-zinc-500 mt-1">Click to select and batch upload artwork graphics</span>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleBatchUpload}
+            disabled={uploading}
+          />
+        </label>
+      )}
+
+      {galleryList.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {galleryList.map((item, idx) => {
+            const imgUrl = typeof item === 'string' ? item : item.url;
+            return (
+              <div key={idx} className="group relative bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-lg space-y-2 p-3">
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-950">
+                  <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveImage(idx, idx - 1)}
+                      disabled={idx === 0}
+                      className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-zinc-200 rounded-lg transition-colors"
+                      title="Move Left"
+                    >
+                      <ArrowLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveImage(idx, idx + 1)}
+                      disabled={idx === galleryList.length - 1}
+                      className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-zinc-200 rounded-lg transition-colors rotate-180"
+                      title="Move Right"
+                    >
+                      <ArrowLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="p-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      title="Delete Image"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Image caption..."
+                  value={typeof item === 'object' ? item.caption || '' : ''}
+                  onChange={(e) => handleCaptionChange(idx, e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function EditForm({ item = {}, type, onCancel, onSave, allWorks = [], allBlogs = [] }) {
+  const [formData, setFormData] = useState({ ...item });
+  const [inspectorTab, setInspectorTab] = useState('settings'); // 'settings' | 'seo'
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setFormData({ ...item });
+  }, [item]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'title' && (!prev.slug || prev.slug === generateSlug(prev.title))) {
+        updated.slug = generateSlug(value);
+      }
+      return updated;
+    });
+    setHasChanges(true);
+  };
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    onSave(formData);
+    setHasChanges(false);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const categoryOptions = [
+    'Graphic Design',
+    'Brand Identity & Rebranding',
+    'UI/UX & Web Design',
+    'Motion Graphics',
+    'Development',
+    'Editorial Design',
+  ];
+
+  return (
+    <div className="flex flex-col h-full bg-zinc-950 text-zinc-50 min-h-screen">
+      {/* ── 1. TOP BAR HEADER (Matches exact reference image) ───────────────── */}
+      <div className="bg-zinc-950 border-b border-zinc-800/80 px-6 py-4 space-y-2 sticky top-0 z-30 backdrop-blur-md">
+        <div className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+          <Layers size={13} className="text-sky-400" />
+          {type === 'works' ? 'Works & Case Studies' : type === 'blogs' || type === 'blog' ? 'Blog Posts' : type}
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-colors cursor-pointer"
+              title="Back to table"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-xl font-bold text-white tracking-wide flex items-center gap-3">
+              {item.id ? 'Edit Post' : 'New Post'}
+              <span
+                className={`px-3 py-1 text-xs rounded-full font-semibold shadow-md ${
+                  formData.status === 'Published'
+                    ? 'bg-[#0284c7] text-white shadow-sky-500/20'
+                    : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                }`}
               >
-                <Check size={14} className="text-green-500" /> Draft saved
-              </motion.span>
-            )}
-          </AnimatePresence>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSubmit}
-            className="relative px-5 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg font-medium transition-colors"
-          >
-            Save Changes
-            {hasChanges && <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 border-2 border-zinc-950 rounded-full"></span>}
-          </motion.button>
+                {formData.status || 'Draft'}
+              </span>
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <AnimatePresence>
+              {isSaved && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-xs text-emerald-400 flex items-center gap-1 font-mono"
+                >
+                  <Check size={14} /> Updated
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="px-6 py-2 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-sm rounded-full shadow-lg shadow-sky-500/25 transition-all cursor-pointer flex items-center gap-2"
+            >
+              Update
+              {hasChanges && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {tabs.length > 0 && (
-          <div className="px-6 pt-6 border-b border-zinc-800">
-            <div className="flex gap-6">
-              {tabs.map(tab => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-indigo-400' : 'text-zinc-400 hover:text-zinc-200'}`}
-                >
-                  {tab}
-                  {activeTab === tab && (
-                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
-                  )}
-                </button>
-              ))}
-            </div>
+      {/* ── 2. SPLIT LAYOUT: EDITOR CANVAS (LEFT) + INSPECTOR SIDEBAR (RIGHT) ── */}
+      <div className="flex-1 flex flex-col lg:flex-row h-full min-h-0 overflow-hidden">
+        
+        {/* LEFT COLUMN: MAIN EDITOR CANVAS */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-zinc-950">
+          {/* Post Title Field */}
+          <div className="space-y-2">
+            <input
+              type="text"
+              name="title"
+              value={formData.title || ''}
+              onChange={handleChange}
+              placeholder="Add title..."
+              className="w-full text-2xl sm:text-3xl font-bold text-white bg-transparent border-b border-zinc-800 pb-3 focus:outline-none focus:border-sky-500 transition-colors placeholder-zinc-600"
+            />
           </div>
-        )}
 
-        <div className="p-6 max-w-4xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab || 'single-form'}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <form className="space-y-6">
-                
-                {/* --- WORKS TABS --- */}
-                {type === 'works' && activeTab === 'Content' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Title</label>
-                        <input name="title" value={formData.title || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Slug</label>
-                        <input name="slug" value={formData.slug || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Tagline</label>
-                        <textarea name="tagline" value={formData.tagline || ''} onChange={handleChange} rows={2} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Client</label>
-                        <input name="client" value={formData.client || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Year</label>
-                          <input type="number" name="year" value={formData.year || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Index (Order)</label>
-                          <input type="number" name="index" value={formData.index || 0} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Category</label>
-                        <select name="category" value={formData.category || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                          <option value="">Select Category</option>
-                          <option value="Web Design">Web Design</option>
-                          <option value="Development">Development</option>
-                          <option value="Branding">Branding</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Services</label>
-                        <TagsInput tags={formData.services} onChange={(tags) => setFormData({...formData, services: tags})} />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Status</label>
-                        <div className="flex gap-2">
-                          {['Draft', 'Published'].map(status => (
-                            <button
-                              key={status}
-                              type="button"
-                              onClick={() => setFormData({...formData, status})}
-                              className={`flex-1 py-2 text-sm font-medium rounded-md border ${formData.status === status ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50' : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:bg-zinc-800'}`}
-                            >
-                              {status}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+          {/* Post Excerpt / Subtitle Field */}
+          {(type === 'blogs' || type === 'blog') && (
+            <div className="space-y-1">
+              <label className="block text-xs font-mono text-zinc-400 uppercase tracking-wider">Post Excerpt</label>
+              <textarea
+                name="excerpt"
+                value={formData.excerpt || ''}
+                onChange={handleChange}
+                rows={2}
+                placeholder="Brief summary for blog cards and search engines..."
+                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-sky-500 resize-none placeholder-zinc-600"
+              />
+            </div>
+          )}
 
-                {type === 'works' && activeTab === 'Case Study' && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-zinc-200">Case Study Sections</h3>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const sections = formData.caseStudy?.sections || [];
-                          setFormData({...formData, caseStudy: { ...formData.caseStudy, sections: [...sections, { heading: '', paragraphs: [{ text: '', highlights: [] }] }] }});
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-sm text-zinc-200 rounded-md transition-colors"
-                      >
-                        <Plus size={16} /> Add Section
-                      </button>
-                    </div>
+          {/* Visual Rich Text Content Editor */}
+          <div className="space-y-2">
+            <RichTextEditor
+              value={formData.content || ''}
+              onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
+              placeholder="Start writing article content or type '/' for slash commands..."
+            />
+          </div>
 
-                    <div className="space-y-8">
-                      {(formData.caseStudy?.sections || []).map((section, sIdx) => (
-                        <div key={sIdx} className="p-5 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                          <div className="flex justify-between">
-                            <input
-                              placeholder="Section Heading (e.g. The Challenge)"
-                              value={section.heading}
-                              onChange={(e) => {
-                                const newSections = [...formData.caseStudy.sections];
-                                newSections[sIdx].heading = e.target.value;
-                                setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                              }}
-                              className="bg-transparent border-b border-zinc-700 focus:border-indigo-500 px-1 py-1 text-lg font-medium text-zinc-200 focus:outline-none w-2/3"
-                            />
-                            <button 
-                              type="button" 
-                              onClick={() => {
-                                const newSections = formData.caseStudy.sections.filter((_, i) => i !== sIdx);
-                                setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                              }}
-                              className="text-red-400 hover:text-red-300 p-1"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-
-                          <div className="space-y-4 pl-4 border-l-2 border-zinc-800">
-                            {(section.paragraphs || []).map((p, pIdx) => (
-                              <div key={pIdx} className="space-y-2 relative">
-                                <textarea
-                                  placeholder="Paragraph text..."
-                                  value={p.text}
-                                  onChange={(e) => {
-                                    const newSections = [...formData.caseStudy.sections];
-                                    newSections[sIdx].paragraphs[pIdx].text = e.target.value;
-                                    setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                                  }}
-                                  rows={3}
-                                  className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none text-sm"
-                                />
-                                <input
-                                  placeholder="Highlights (comma separated words to bold)"
-                                  value={(p.highlights || []).join(', ')}
-                                  onChange={(e) => {
-                                    const newSections = [...formData.caseStudy.sections];
-                                    newSections[sIdx].paragraphs[pIdx].highlights = e.target.value.split(',').map(h => h.trim()).filter(Boolean);
-                                    setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                                  }}
-                                  className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-xs"
-                                />
-                                {section.paragraphs.length > 1 && (
-                                  <button type="button" onClick={() => {
-                                      const newSections = [...formData.caseStudy.sections];
-                                      newSections[sIdx].paragraphs = newSections[sIdx].paragraphs.filter((_, i) => i !== pIdx);
-                                      setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                                  }} className="absolute top-2 -right-8 text-zinc-500 hover:text-red-400">
-                                    <X size={16} />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                            <button 
-                              type="button" 
-                              onClick={() => {
-                                const newSections = [...formData.caseStudy.sections];
-                                newSections[sIdx].paragraphs.push({ text: '', highlights: [] });
-                                setFormData({...formData, caseStudy: {...formData.caseStudy, sections: newSections}});
-                              }}
-                              className="text-xs text-indigo-400 hover:text-indigo-300"
-                            >
-                              + Add Paragraph
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {type === 'works' && activeTab === 'Gallery' && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-zinc-200">Image Gallery</h3>
-                      <button 
-                        type="button"
-                        onClick={() => setFormData({...formData, gallery: [...(formData.gallery || []), { url: '', caption: '' }]})}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-sm text-zinc-200 rounded-md transition-colors"
-                      >
-                        <Plus size={16} /> Add Image Slot
-                      </button>
-                    </div>
-
-                    <div className="space-y-4">
-                      {(formData.gallery || []).map((item, idx) => (
-                        <div key={idx} className="flex gap-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                          <div className="w-1/3">
-                            <ImageUpload 
-                              value={item.url} 
-                              onChange={(url) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[idx].url = url;
-                                setFormData({...formData, gallery: newGallery});
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 space-y-3">
-                            <input
-                              placeholder="Caption (optional)"
-                              value={item.caption || ''}
-                              onChange={(e) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[idx].caption = e.target.value;
-                                setFormData({...formData, gallery: newGallery});
-                              }}
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
-                            />
-                            <div className="flex gap-2">
-                              <button type="button" disabled={idx === 0} onClick={() => {
-                                const newG = [...formData.gallery];
-                                [newG[idx-1], newG[idx]] = [newG[idx], newG[idx-1]];
-                                setFormData({...formData, gallery: newG});
-                              }} className="p-1.5 bg-zinc-800 text-zinc-400 rounded-md hover:bg-zinc-700 disabled:opacity-50">
-                                <ChevronUp size={16} />
-                              </button>
-                              <button type="button" disabled={idx === formData.gallery.length - 1} onClick={() => {
-                                const newG = [...formData.gallery];
-                                [newG[idx+1], newG[idx]] = [newG[idx], newG[idx+1]];
-                                setFormData({...formData, gallery: newG});
-                              }} className="p-1.5 bg-zinc-800 text-zinc-400 rounded-md hover:bg-zinc-700 disabled:opacity-50">
-                                <ChevronDown size={16} />
-                              </button>
-                              <button type="button" onClick={() => {
-                                setFormData({...formData, gallery: formData.gallery.filter((_, i) => i !== idx)});
-                              }} className="ml-auto p-1.5 bg-red-500/10 text-red-400 rounded-md hover:bg-red-500/20">
-                                <X size={16} /> Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* --- SEO TAB (Works & Blogs) --- */}
-                {((type === 'works' || type === 'blogs') && activeTab === 'SEO') && (
-                  <div className="space-y-6 max-w-2xl">
-                    <ImageUpload 
-                      label="Social Share Image (OG Image)" 
-                      value={formData.seoImage || ''} 
-                      onChange={(val) => setFormData({...formData, seoImage: val})} 
-                    />
-                    
-                    <div>
-                      <div className="flex justify-between items-end mb-1">
-                        <label className="block text-sm font-medium text-zinc-400">SEO Title</label>
-                        <span className="text-xs" style={{ color: getSeoTitleColor((formData.seoTitle || '').length) }}>
-                          {(formData.seoTitle || '').length} / 60
-                        </span>
-                      </div>
-                      <input 
-                        name="seoTitle" 
-                        value={formData.seoTitle || ''} 
-                        onChange={handleChange} 
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" 
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-end mb-1">
-                        <label className="block text-sm font-medium text-zinc-400">SEO Description</label>
-                        <span className="text-xs" style={{ color: getSeoDescColor((formData.seoDescription || '').length) }}>
-                          {(formData.seoDescription || '').length} / 160
-                        </span>
-                      </div>
-                      <textarea 
-                        name="seoDescription" 
-                        value={formData.seoDescription || ''} 
-                        onChange={handleChange} 
-                        rows={3}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none" 
-                      />
-                    </div>
-                  </div>
-                )}
-
-
-                {/* --- BLOG CONTENT TAB --- */}
-                {type === 'blogs' && activeTab === 'Content' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Title</label>
-                        <input name="title" value={formData.title || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-lg font-medium" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Slug</label>
-                        <input name="slug" value={formData.slug || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono text-sm text-zinc-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Excerpt</label>
-                        <textarea name="excerpt" value={formData.excerpt || ''} onChange={handleChange} rows={3} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Content (Markdown/HTML)</label>
-                        <textarea name="content" value={formData.content || ''} onChange={handleChange} rows={20} className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-4 py-3 text-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono text-sm leading-relaxed" />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-6">
-                      <ImageUpload label="Featured Image" value={formData.featuredImage || ''} onChange={(val) => setFormData({...formData, featuredImage: val})} />
-                      
-                      <div className="space-y-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Status</label>
-                          <div className="flex gap-2">
-                            {['Draft', 'Published'].map(status => (
-                              <button
-                                key={status}
-                                type="button"
-                                onClick={() => setFormData({...formData, status})}
-                                className={`flex-1 py-1.5 text-sm font-medium rounded-md border ${formData.status === status ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'}`}
-                              >
-                                {status}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Category</label>
-                          <input name="category" value={formData.category || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Publish Date</label>
-                          <input type="date" name="publishDate" value={formData.publishDate || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm [color-scheme:dark]" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Read Time (mins)</label>
-                          <input type="number" name="readTime" value={formData.readTime || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-
-                {/* --- TESTIMONIALS --- */}
-                {type === 'testimonials' && (
-                  <div className="space-y-6 max-w-xl">
-                    <div className="flex items-start gap-6">
-                      <div className="w-32">
-                        <ImageUpload label="Avatar" value={formData.avatar || ''} onChange={(val) => setFormData({...formData, avatar: val})} />
-                      </div>
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-1">Name</label>
-                          <input name="name" value={formData.name || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Role</label>
-                            <input name="role" value={formData.role || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Company</label>
-                            <input name="company" value={formData.company || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Quote</label>
-                      <textarea name="quote" value={formData.quote || ''} onChange={handleChange} rows={4} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none text-lg" />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Order</label>
-                        <input type="number" name="order" value={formData.order || 0} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Status</label>
-                        <select name="status" value={formData.status || 'Active'} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                          <option value="Active">Active</option>
-                          <option value="Hidden">Hidden</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* --- CAPABILITIES --- */}
-                {type === 'capabilities' && (
-                  <div className="space-y-6 max-w-xl">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Capability Name</label>
-                      <input name="name" value={formData.name || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-lg font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Description</label>
-                      <textarea name="desc" value={formData.desc || ''} onChange={handleChange} rows={4} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Order</label>
-                      <input type="number" name="order" value={formData.order || 0} onChange={handleChange} className="w-24 bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                    </div>
-                  </div>
-                )}
-
-                {/* --- MILESTONES --- */}
-                {type === 'milestones' && (
-                  <div className="space-y-6 max-w-xl">
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="col-span-1">
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Year</label>
-                        <input name="year" value={formData.year || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono" />
-                      </div>
-                      <div className="col-span-3">
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Title</label>
-                        <input name="title" value={formData.title || ''} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-medium" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Description</label>
-                      <textarea name="desc" value={formData.desc || ''} onChange={handleChange} rows={3} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-1">Order</label>
-                      <input type="number" name="order" value={formData.order || 0} onChange={handleChange} className="w-24 bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
-                    </div>
-                  </div>
-                )}
-                
-              </form>
-            </motion.div>
-          </AnimatePresence>
+          {/* Work Case Study / Gallery Sections if editing a Work item */}
+          {type === 'works' && (
+            <div className="pt-6 border-t border-zinc-800 space-y-6">
+              <GalleryManager formData={formData} setFormData={setFormData} />
+            </div>
+          )}
         </div>
+
+        {/* RIGHT COLUMN: INSPECTOR SIDEBAR (Matches exact reference screenshot) */}
+        <div className="w-full lg:w-96 border-l border-zinc-800/90 bg-zinc-900/95 p-6 overflow-y-auto shrink-0 shadow-2xl">
+          
+          {/* Pill Tab Switcher: [ Settings ] | [ SEO ] */}
+          <div className="flex items-center p-1 bg-zinc-950 rounded-xl border border-zinc-800/90 mb-6 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setInspectorTab('settings')}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                inspectorTab === 'settings'
+                  ? 'bg-zinc-800 text-white shadow-md'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <SlidersHorizontal size={14} className="text-sky-400" /> Settings
+            </button>
+            <button
+              type="button"
+              onClick={() => setInspectorTab('seo')}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                inspectorTab === 'seo'
+                  ? 'bg-zinc-800 text-white shadow-md'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Search size={14} className="text-sky-400" /> SEO
+            </button>
+          </div>
+
+          {/* INSPECTOR TAB CONTENT: SETTINGS */}
+          {inspectorTab === 'settings' && (
+            <div className="space-y-6">
+              
+              {/* Section 1: Status & Visibility */}
+              <div className="space-y-3 pb-6 border-b border-zinc-800/80">
+                <h4 className="text-xs font-mono font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                  <Eye size={14} className="text-sky-400" /> Status & Visibility
+                </h4>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-zinc-400 font-medium">Post Status</label>
+                  <select
+                    name="status"
+                    value={formData.status || 'Published'}
+                    onChange={handleChange}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-100 font-medium focus:outline-none focus:border-sky-500 [color-scheme:dark]"
+                  >
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Section 2: Organization / Category */}
+              <div className="space-y-3 pb-6 border-b border-zinc-800/80">
+                <h4 className="text-xs font-mono font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                  <Folder size={14} className="text-sky-400" /> Organization
+                </h4>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-zinc-400 font-medium">Category</label>
+                  <select
+                    name="category"
+                    value={formData.category || ''}
+                    onChange={handleChange}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-100 font-medium focus:outline-none focus:border-sky-500 [color-scheme:dark]"
+                  >
+                    <option value="">Select Category</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Section 3: Featured Image */}
+              <div className="space-y-3 pb-6 border-b border-zinc-800/80">
+                <h4 className="text-xs font-mono font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                  <ImageIcon size={14} className="text-sky-400" /> Featured Image
+                </h4>
+                <ImageUpload
+                  value={formData.featuredImage || formData.image || ''}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, featuredImage: val, image: val }))}
+                />
+              </div>
+
+              {/* Section 4: Publish Meta */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar size={14} className="text-sky-400" /> Meta & Publishing
+                </h4>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-zinc-400 font-medium mb-1">Publish Date</label>
+                    <input
+                      type="date"
+                      name="publishDate"
+                      value={formData.publishDate || ''}
+                      onChange={handleChange}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 [color-scheme:dark]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-zinc-400 font-medium mb-1">Read Time (minutes)</label>
+                    <input
+                      type="text"
+                      name="readTime"
+                      value={formData.readTime || '5 min read'}
+                      onChange={handleChange}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* INSPECTOR TAB CONTENT: SEO */}
+          {inspectorTab === 'seo' && (
+            <div className="space-y-6">
+              
+              {/* Section 1: URL Slug */}
+              <div className="space-y-1.5 pb-4 border-b border-zinc-800/80">
+                <label className="block text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">URL Slug</label>
+                <input
+                  type="text"
+                  name="slug"
+                  value={formData.slug || ''}
+                  onChange={handleChange}
+                  placeholder="post-url-slug"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Section 2: SEO Title */}
+              <div className="space-y-1.5 pb-4 border-b border-zinc-800/80">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">SEO Title</label>
+                  <span className="text-[10px] font-mono" style={{ color: getSeoTitleColor((formData.seoTitle || '').length) }}>
+                    {(formData.seoTitle || '').length} / 60
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  name="seoTitle"
+                  value={formData.seoTitle || ''}
+                  onChange={handleChange}
+                  placeholder="SEO meta title..."
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Section 3: SEO Description */}
+              <div className="space-y-1.5 pb-4 border-b border-zinc-800/80">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">SEO Description</label>
+                  <span className="text-[10px] font-mono" style={{ color: getSeoDescColor((formData.seoDescription || '').length) }}>
+                    {(formData.seoDescription || '').length} / 160
+                  </span>
+                </div>
+                <textarea
+                  name="seoDescription"
+                  value={formData.seoDescription || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="Compelling meta description for search results..."
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 resize-none"
+                />
+              </div>
+
+              {/* Section 4: Social Share Image (OG Image) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">Social Share (OG) Image</label>
+                <ImageUpload
+                  value={formData.seoImage || ''}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, seoImage: val }))}
+                />
+              </div>
+
+            </div>
+          )}
+
+        </div>
+
       </div>
     </div>
   );

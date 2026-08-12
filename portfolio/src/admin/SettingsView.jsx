@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Save } from 'lucide-react'
+import { Save, Upload, FileText } from 'lucide-react'
+import { contentServices } from '../services/contentService'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -39,6 +40,63 @@ function TextArea({ value, onChange, placeholder, rows = 3, required = false }) 
       rows={rows}
       className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all resize-y"
     />
+  )
+}
+
+function PdfUploadInput({ value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const url = await contentServices.uploadFile(file)
+      if (url) {
+        onChange(url)
+      }
+    } catch (err) {
+      console.error('PDF upload failed', err)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/cv/pratik-bhusal-cv.pdf"
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-md px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 font-mono"
+        />
+        <label className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono rounded-md cursor-pointer transition-colors shrink-0 flex items-center gap-1.5 border border-zinc-700">
+          <Upload size={14} className="text-indigo-400" />
+          {uploading ? 'Uploading...' : 'Upload PDF'}
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={uploading}
+          />
+        </label>
+      </div>
+      {value && (
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-mono text-indigo-400 hover:underline inline-flex items-center gap-1 mt-1"
+        >
+          <FileText size={13} />
+          <span>Preview PDF:</span> {value}
+        </a>
+      )}
+    </div>
   )
 }
 
@@ -197,20 +255,29 @@ export default function SettingsView({ initialSettings, onSave, showToast }) {
             </FieldGroup>
           </div>
 
-          <FieldGroup label="Contact Email">
-            <TextInput
-              value={settings.contactEmail}
-              onChange={(v) => update('contactEmail', v)}
-              type="email"
-              required
-            />
-          </FieldGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FieldGroup label="Contact Email">
+              <TextInput
+                value={settings.contactEmail}
+                onChange={(v) => update('contactEmail', v)}
+                type="email"
+                required
+              />
+            </FieldGroup>
 
-          <FieldGroup label="CV / Resume PDF File URL">
-            <TextInput
+            <FieldGroup label="WhatsApp Number / Link">
+              <TextInput
+                value={settings.whatsappNumber}
+                onChange={(v) => update('whatsappNumber', v)}
+                placeholder="+977 9800000000 or https://wa.me/..."
+              />
+            </FieldGroup>
+          </div>
+
+          <FieldGroup label="CV / Resume PDF File (Upload or URL)">
+            <PdfUploadInput
               value={settings.cvUrl}
               onChange={(v) => update('cvUrl', v)}
-              placeholder="/cv/pratik-bhusal-cv.pdf"
             />
           </FieldGroup>
         </div>

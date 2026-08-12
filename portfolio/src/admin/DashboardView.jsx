@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { ENV } from '../config/env'
 import {
   Briefcase, FileText, MessageSquareQuote, Zap, Clock,
   Plus, ArrowUpRight, Database, HardDrive, User
@@ -61,7 +62,7 @@ export default function DashboardView({
   const activeBlogs = blogs.filter(b => b.status !== 'Draft').length
   const activeTestimonials = testimonials.filter(t => t.status !== 'Draft').length
 
-  const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@pratikbhusal.com'
+  const ADMIN_EMAIL = ENV.ADMIN_EMAIL
 
   const quickActions = [
     { label: 'New Case Study', icon: Briefcase, tab: 'works', action: 'new' },

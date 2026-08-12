@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ENV } from '../config/env';
 import {
   LayoutDashboard,
   Briefcase,
@@ -24,7 +25,7 @@ const TABS = [
 ];
 
 export default function AdminSidebar({ activeTab, onTabChange, isCollapsed, onToggleCollapse }) {
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com';
+  const adminEmail = ENV.ADMIN_EMAIL;
 
   useEffect(() => {
     localStorage.setItem('pb_admin_sidebar_collapsed', JSON.stringify(isCollapsed));

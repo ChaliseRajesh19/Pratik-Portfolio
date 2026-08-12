@@ -179,6 +179,7 @@ export default function HeroCard({ timeline }) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={cycleNextCard}
+        data-cursor="DRAG"
         className="relative w-[280px] sm:w-[320px] h-[340px] flex items-center justify-center group cursor-pointer"
       >
         {/* Glow backlight behind deck */}

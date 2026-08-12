@@ -86,6 +86,7 @@ export default function TestimonialsSection({ initialTestimonials }) {
           return (
             <div
               key={t.id}
+              data-cursor="EXPAND"
               className="group py-5 sm:py-6 transition-all duration-300"
               style={{
                 opacity: isDimmed ? 0.45 : 1,

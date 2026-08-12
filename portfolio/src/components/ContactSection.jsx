@@ -59,11 +59,21 @@ export default function ContactSection({ initialSettings }) {
     return () => ctx.revert()
   }, [])
 
+  const getWhatsappUrl = (val) => {
+    if (!val) return 'https://wa.me/9779800000000'
+    if (val.startsWith('http://') || val.startsWith('https://')) return val
+    const cleaned = val.replace(/[^\d+]/g, '')
+    return `https://wa.me/${cleaned.replace('+', '')}`
+  }
+
+  const whatsappUrl = getWhatsappUrl(settings.whatsappNumber)
+
   const socials = [
-    { label: 'INSTAGRAM', url: 'https://www.instagram.com/pratikbhusal_/' },
-    { label: 'FACEBOOK',  url: 'https://www.facebook.com/pratikbhusal'    },
-    { label: 'BEHANCE',   url: 'https://www.behance.net/pratikbhusal'     },
-    { label: 'LINKEDIN',  url: 'https://www.linkedin.com/in/pratikbhusal' },
+    { label: 'WHATSAPP',  url: whatsappUrl },
+    { label: 'INSTAGRAM', url: settings.instagram || 'https://www.instagram.com/pratikbhusal_/' },
+    { label: 'FACEBOOK',  url: settings.facebook  || 'https://www.facebook.com/pratikbhusal'    },
+    { label: 'BEHANCE',   url: settings.behance   || 'https://www.behance.net/pratikbhusal'     },
+    { label: 'LINKEDIN',  url: settings.linkedin  || 'https://www.linkedin.com/in/pratikbhusal' },
   ]
 
   return (
@@ -158,6 +168,8 @@ export default function ContactSection({ initialSettings }) {
           {/* Clickable Badge */}
           <motion.a
             href={`mailto:${settings.contactEmail}`}
+            data-magnetic="true"
+            data-cursor="VISIT"
             whileHover={{ scale: 1.06 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="badge-interactive-group relative w-[130px] sm:w-[170px] aspect-square rounded-full flex items-center justify-center cursor-pointer group"
@@ -179,7 +191,7 @@ export default function ContactSection({ initialSettings }) {
             </div>
 
             {/* Static Center arrow inside small circular frame */}
-            <div className="relative w-12 sm:w-16 aspect-square rounded-full border border-neutral-800/80 bg-[#0c0c0c] flex items-center justify-center shadow-lg group-hover:border-[#ff6b35]/60 transition-colors duration-300">
+            <div className="magnetic-inner relative w-12 sm:w-16 aspect-square rounded-full border border-neutral-800/80 bg-[#0c0c0c] flex items-center justify-center shadow-lg group-hover:border-[#ff6b35]/60 transition-colors duration-300">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -207,6 +219,7 @@ export default function ContactSection({ initialSettings }) {
         {/* Email */}
         <motion.a
           href={`mailto:${settings.contactEmail}`}
+          data-cursor="VISIT"
           whileHover={{ color: '#ffffff' }}
           transition={{ duration: 0.2 }}
           className="font-mono text-xs sm:text-sm tracking-widest text-neutral-400 uppercase hover:text-white transition-colors cursor-pointer text-center sm:text-left"
@@ -222,6 +235,7 @@ export default function ContactSection({ initialSettings }) {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-cursor="VISIT"
                 whileHover={{ color: '#ff6b35' }}
                 transition={{ duration: 0.2 }}
                 className="font-mono text-xs sm:text-sm tracking-widest text-neutral-400 uppercase hover:text-[#ff6b35] transition-colors cursor-pointer"

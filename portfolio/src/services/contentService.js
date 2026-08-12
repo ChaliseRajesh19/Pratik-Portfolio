@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { worksData } from '../data/worksData'
 import { blogPosts } from '../data/blogData'
+import { ENV } from '../config/env'
 
-// Initialize Supabase if keys are provided
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+// Initialize Supabase using central config
+const supabaseUrl = ENV.SUPABASE_URL
+const supabaseAnonKey = ENV.SUPABASE_ANON_KEY
 export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null
 
 // Initial Seed data structures
@@ -86,6 +87,7 @@ const defaultSettings = {
   behance: 'https://www.behance.net/pratikbhusal',
   linkedin: 'https://www.linkedin.com/in/pratikbhusal',
   contactEmail: 'pratikbhusal12345@gmail.com',
+  whatsappNumber: '+9779800000000',
   cvUrl: '/cv/pratik-bhusal-cv.pdf',
   aboutHeroText: 'I MAKE THINGS WORTH SEEING.',
   aboutBio: `I am Pratik Bhusal, a graphic designer and art director focusing on raw, structural typography, functional packaging guidelines, and holistic brand systems. Design is not just decoration — it is communication engineering. I build visual systems that help brands cut through clutter, establish clear visual architecture, and communicate value instantly to their users. Based in Kathmandu, Nepal, I work with local leaders and international teams to scale brands across packaging boxes, physical publications, and responsive digital interfaces.`,
@@ -113,74 +115,178 @@ const setLocal = (key, val) => {
   }
 }
 
+export const formatSupabaseError = (error, tableName) => {
+  if (!error) return null;
+  const code = error.code || 'PGRST205';
+  const msg = error.message || '';
+  if (code === 'PGRST205' || msg.includes('schema cache') || msg.includes('does not exist') || msg.includes('Could not find')) {
+    return `Supabase Schema Error (${code}): Table 'public.${tableName}' not found in database. Saved locally.`;
+  }
+  if (code === '42501' || msg.includes('row-level security') || msg.includes('RLS')) {
+    return `Supabase Permission Error (42501): RLS policy blocking write to '${tableName}'. Saved locally.`;
+  }
+  if (code === '23505') {
+    return `Supabase Constraint Error (23505): Duplicate entry in '${tableName}'. Saved locally.`;
+  }
+  return `Supabase Error (${code}): ${msg || 'Operation failed'}. Saved locally.`;
+};
+
 export const contentServices = {
   // ─── WORKS ───────────────────────────────────────────────────────────────
   async getWorks() {
     if (supabase) {
       const { data, error } = await supabase.from('works').select('*').order('id', { ascending: true })
-      if (!error && data) return data
+      if (!error && data) {
+        return data.map((w, idx) => ({ ...w, id: w.id ?? w.slug ?? `work-${idx + 1}` }))
+      }
+      if (error) {
+        console.warn('Supabase getWorks fallback:', error.message || error)
+      }
     }
-    return getLocal('works', worksData)
+    const list = getLocal('works', worksData)
+    return (list || []).map((work, idx) => ({
+      ...work,
+      id: work.id ?? work.slug ?? `work-${idx + 1}`
+    }))
   },
 
   async saveWork(work) {
+    let supabaseErr = null;
     if (supabase) {
       const { data, error } = await supabase.from('works').upsert(work).select()
       if (!error && data) return data[0]
+      if (error) {
+        console.error('Supabase saveWork error:', error)
+        supabaseErr = formatSupabaseError(error, 'works')
+      }
     }
     const works = await this.getWorks()
-    const idx = works.findIndex(w => w.slug === work.slug || w.id === work.id)
+    const targetStr = String(work.id || work.slug || work.title)
+    const idx = works.findIndex(w => String(w.id) === targetStr || String(w.slug) === targetStr)
     if (idx !== -1) {
       works[idx] = { ...works[idx], ...work }
     } else {
-      works.push({ id: Date.now(), ...work })
+      works.push({ id: work.id || Date.now(), ...work })
     }
     setLocal('works', works)
+    if (supabaseErr) throw new Error(supabaseErr)
     return work
   },
 
-  async deleteWork(id) {
+  async deleteWork(identifier) {
+    const targetStr = String(identifier)
     if (supabase) {
-      await supabase.from('works').delete().eq('id', id)
-      return
+      try {
+        await supabase.from('works').delete().or(`id.eq.${identifier},slug.eq.${identifier},title.eq.${identifier}`)
+      } catch (e) {
+        console.warn('Supabase delete work fallback', e)
+      }
     }
-    const works = await this.getWorks()
-    const filtered = works.filter(w => w.id !== id)
+    const current = getLocal('works', worksData)
+    const filtered = (current || []).filter(w => 
+      String(w.id) !== targetStr && 
+      String(w.slug) !== targetStr && 
+      String(w.title) !== targetStr
+    )
     setLocal('works', filtered)
   },
 
   // ─── BLOG POSTS ──────────────────────────────────────────────────────────
   async getBlogPosts() {
     if (supabase) {
-      const { data, error } = await supabase.from('blog_posts').select('*').order('publishDate', { ascending: false })
-      if (!error && data) return data
+      // Try 'blogs' table (blog-design schema) first
+      let { data, error } = await supabase.from('blogs').select('*').order('created_at', { ascending: false })
+      if (error || !data) {
+        const res = await supabase.from('blog_posts').select('*')
+        data = res.data
+        error = res.error
+      }
+      if (!error && data) {
+        return data.map((b, idx) => ({
+          ...b,
+          id: b.id ?? b.slug ?? `blog-${idx + 1}`,
+          featuredImage: b.cover_image || b.featuredImage || b.image || '',
+          image: b.cover_image || b.image || b.featuredImage || '',
+          imageAlt: b.cover_image_alt || b.imageAlt || '',
+          seoTitle: b.seo_title || b.seoTitle || '',
+          seoDescription: b.seo_description || b.seoDescription || '',
+          publishDate: b.published_at || b.publishDate || b.date || '',
+          status: b.status || 'Draft',
+        }))
+      }
     }
-    return getLocal('blog', blogPosts)
+    const list = getLocal('blog', blogPosts)
+    return (list || []).map((post, idx) => ({
+      ...post,
+      id: post.id ?? post.slug ?? `blog-${idx + 1}`
+    }))
   },
 
   async saveBlogPost(post) {
+    let supabaseErr = null;
     if (supabase) {
-      const { data, error } = await supabase.from('blog_posts').upsert(post).select()
+      const blogRow = {
+        title: post.title,
+        content: post.content,
+        author: post.author || 'Pratik Bhusal',
+        slug: post.slug || (post.title ? post.title.toLowerCase().replace(/\s+/g, '-') : ''),
+        category: post.category || 'General',
+        excerpt: post.excerpt || '',
+        cover_image: post.featuredImage || post.coverImage || post.image || '',
+        cover_image_alt: post.imageAlt || post.coverImageAlt || '',
+        tags: Array.isArray(post.tags) ? post.tags : (post.tags ? String(post.tags).split(',') : []),
+        featured: Boolean(post.featured),
+        seo_title: post.seoTitle || '',
+        seo_description: post.seoDescription || '',
+        status: (post.status || 'draft').toLowerCase(),
+        published_at: post.publishDate || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      if (post.id) blogRow.id = post.id
+
+      // Try inserting into 'blogs' table first
+      const { data, error } = await supabase.from('blogs').upsert(blogRow).select()
       if (!error && data) return data[0]
+
+      // Fallback to 'blog_posts' table
+      const { data: dataFallback, error: errFallback } = await supabase.from('blog_posts').upsert(post).select()
+      if (!errFallback && dataFallback) return dataFallback[0]
+
+      if (error || errFallback) {
+        console.error('Supabase saveBlogPost error:', error || errFallback)
+        supabaseErr = formatSupabaseError(error || errFallback, 'blogs')
+      }
     }
+
     const posts = await this.getBlogPosts()
-    const idx = posts.findIndex(p => p.slug === post.slug || p.id === post.id)
+    const targetStr = String(post.id || post.slug || post.title)
+    const idx = posts.findIndex(p => String(p.id) === targetStr || String(p.slug) === targetStr)
     if (idx !== -1) {
       posts[idx] = { ...posts[idx], ...post }
     } else {
-      posts.push({ id: Date.now(), ...post })
+      posts.push({ id: post.id || Date.now(), ...post })
     }
     setLocal('blog', posts)
+    if (supabaseErr) throw new Error(supabaseErr)
     return post
   },
 
-  async deleteBlogPost(id) {
+  async deleteBlogPost(identifier) {
+    const targetStr = String(identifier)
     if (supabase) {
-      await supabase.from('blog_posts').delete().eq('id', id)
-      return
+      try {
+        await supabase.from('blogs').delete().or(`id.eq.${identifier},slug.eq.${identifier},title.eq.${identifier}`)
+        await supabase.from('blog_posts').delete().or(`id.eq.${identifier},slug.eq.${identifier},title.eq.${identifier}`)
+      } catch (e) {
+        console.warn('Supabase delete blog fallback', e)
+      }
     }
-    const posts = await this.getBlogPosts()
-    const filtered = posts.filter(p => p.id !== id)
+    const current = getLocal('blog', blogPosts)
+    const filtered = (current || []).filter(p => 
+      String(p.id) !== targetStr && 
+      String(p.slug) !== targetStr && 
+      String(p.title) !== targetStr
+    )
     setLocal('blog', filtered)
   },
 
@@ -189,33 +295,50 @@ export const contentServices = {
     if (supabase) {
       const { data, error } = await supabase.from('testimonials').select('*').order('order', { ascending: true })
       if (!error && data) return data
+      if (error) {
+        console.warn('Supabase getTestimonials fallback:', error.message || error)
+      }
     }
     return getLocal('testimonials', defaultTestimonials)
   },
 
   async saveTestimonial(t) {
+    let supabaseErr = null;
     if (supabase) {
       const { data, error } = await supabase.from('testimonials').upsert(t).select()
       if (!error && data) return data[0]
+      if (error) {
+        console.error('Supabase saveTestimonial error:', error)
+        supabaseErr = formatSupabaseError(error, 'testimonials')
+      }
     }
     const list = await this.getTestimonials()
-    const idx = list.findIndex(item => item.id === t.id)
+    const targetStr = String(t.id)
+    const idx = list.findIndex(item => String(item.id) === targetStr)
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...t }
     } else {
-      list.push({ id: `test-${Date.now()}`, ...t })
+      list.push({ id: t.id || `test-${Date.now()}`, ...t })
     }
     setLocal('testimonials', list)
+    if (supabaseErr) throw new Error(supabaseErr)
     return t
   },
 
-  async deleteTestimonial(id) {
+  async deleteTestimonial(identifier) {
+    const targetStr = String(identifier)
     if (supabase) {
-      await supabase.from('testimonials').delete().eq('id', id)
-      return
+      try {
+        await supabase.from('testimonials').delete().or(`id.eq.${identifier},name.eq.${identifier}`)
+      } catch (e) {
+        console.warn('Supabase delete testimonial fallback', e)
+      }
     }
-    const list = await this.getTestimonials()
-    const filtered = list.filter(item => item.id !== id)
+    const current = getLocal('testimonials', defaultTestimonials)
+    const filtered = (current || []).filter(item => 
+      String(item.id) !== targetStr && 
+      String(item.name) !== targetStr
+    )
     setLocal('testimonials', filtered)
   },
 
@@ -224,33 +347,47 @@ export const contentServices = {
     if (supabase) {
       const { data, error } = await supabase.from('capabilities').select('*').order('order', { ascending: true })
       if (!error && data) return data
+      if (error) console.warn('Supabase getCapabilities fallback:', error.message || error)
     }
     return getLocal('capabilities', defaultCapabilities)
   },
 
   async saveCapability(c) {
+    let supabaseErr = null;
     if (supabase) {
       const { data, error } = await supabase.from('capabilities').upsert(c).select()
       if (!error && data) return data[0]
+      if (error) {
+        console.error('Supabase saveCapability error:', error)
+        supabaseErr = formatSupabaseError(error, 'capabilities')
+      }
     }
     const list = await this.getCapabilities()
     const idx = list.findIndex(item => item.id === c.id)
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...c }
     } else {
-      list.push({ id: `cap-${Date.now()}`, ...c })
+      list.push({ id: c.id || `cap-${Date.now()}`, ...c })
     }
     setLocal('capabilities', list)
+    if (supabaseErr) throw new Error(supabaseErr)
     return c
   },
 
-  async deleteCapability(id) {
+  async deleteCapability(identifier) {
+    const targetStr = String(identifier)
     if (supabase) {
-      await supabase.from('capabilities').delete().eq('id', id)
-      return
+      try {
+        await supabase.from('capabilities').delete().or(`id.eq.${identifier},name.eq.${identifier}`)
+      } catch (e) {
+        console.warn('Supabase delete capability fallback', e)
+      }
     }
-    const list = await this.getCapabilities()
-    const filtered = list.filter(item => item.id !== id)
+    const current = getLocal('capabilities', defaultCapabilities)
+    const filtered = (current || []).filter(item => 
+      String(item.id) !== targetStr && 
+      String(item.name) !== targetStr
+    )
     setLocal('capabilities', filtered)
   },
 
@@ -259,33 +396,48 @@ export const contentServices = {
     if (supabase) {
       const { data, error } = await supabase.from('milestones').select('*').order('order', { ascending: true })
       if (!error && data) return data
+      if (error) console.warn('Supabase getMilestones fallback:', error.message || error)
     }
     return getLocal('milestones', defaultMilestones)
   },
 
   async saveMilestone(m) {
+    let supabaseErr = null;
     if (supabase) {
       const { data, error } = await supabase.from('milestones').upsert(m).select()
       if (!error && data) return data[0]
+      if (error) {
+        console.error('Supabase saveMilestone error:', error)
+        supabaseErr = formatSupabaseError(error, 'milestones')
+      }
     }
     const list = await this.getMilestones()
-    const idx = list.findIndex(item => item.id === m.id)
+    const targetStr = String(m.id)
+    const idx = list.findIndex(item => String(item.id) === targetStr)
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...m }
     } else {
-      list.push({ id: `m-${Date.now()}`, ...m })
+      list.push({ id: m.id || `m-${Date.now()}`, ...m })
     }
     setLocal('milestones', list)
+    if (supabaseErr) throw new Error(supabaseErr)
     return m
   },
 
-  async deleteMilestone(id) {
+  async deleteMilestone(identifier) {
+    const targetStr = String(identifier)
     if (supabase) {
-      await supabase.from('milestones').delete().eq('id', id)
-      return
+      try {
+        await supabase.from('milestones').delete().or(`id.eq.${identifier},title.eq.${identifier}`)
+      } catch (e) {
+        console.warn('Supabase delete milestone fallback', e)
+      }
     }
-    const list = await this.getMilestones()
-    const filtered = list.filter(item => item.id !== id)
+    const current = getLocal('milestones', defaultMilestones)
+    const filtered = (current || []).filter(item => 
+      String(item.id) !== targetStr && 
+      String(item.title) !== targetStr
+    )
     setLocal('milestones', filtered)
   },
 

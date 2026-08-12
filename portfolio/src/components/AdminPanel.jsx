@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { contentServices, supabase } from '../services/contentService'
 import { motion } from 'framer-motion'
+import { ENV } from '../config/env'
 
 export default function AdminPanel({ currentPath, onNavigate }) {
   const navigate = useNavigate()
@@ -43,9 +44,9 @@ export default function AdminPanel({ currentPath, onNavigate }) {
   // Search filter query
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Single admin credentials (seed fallbacks if env is empty)
-  const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@pratikbhusal.com'
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin12345'
+  // Single admin credentials (central config)
+  const ADMIN_EMAIL = ENV.ADMIN_EMAIL
+  const ADMIN_PASSWORD = ENV.ADMIN_PASSWORD
 
   // Fetch all site content on auth success
   useEffect(() => {

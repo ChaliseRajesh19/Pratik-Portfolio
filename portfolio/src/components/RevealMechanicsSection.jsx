@@ -7,8 +7,168 @@ import mechanicAImg from '../assets/works/work1.jpg'
 import mechanicBImg from '../assets/works/work3.jpg'
 import mechanicC1Img from '../assets/social media/Study 2.png'
 import mechanicC2Img from '../assets/social media/pp.png'
+import pathao1Img from '../assets/branding/pathao 1.png'
+import pathao2Img from '../assets/branding/pathao2.png'
+import fifaImg from '../assets/social media/fifa.png'
+import { contentServices } from '../services/contentService'
 
 gsap.registerPlugin(ScrollTrigger)
+
+/**
+ * HoverScrubberCard — Desktop position-based image scrubbing & mobile clean showcase
+ */
+function HoverScrubberCard({ label, desc, defaultImage, customImages }) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [isRevealed, setIsRevealed] = useState(false)
+  const [dbImages, setDbImages] = useState([])
+  const cardRef = useRef(null)
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+  useEffect(() => {
+    async function loadWorkGallery() {
+      try {
+        const works = await contentServices.getWorks()
+        if (works && works.length > 0) {
+          const imgs = []
+          works.forEach((w) => {
+            if (w.image) imgs.push(w.image)
+            if (Array.isArray(w.images)) imgs.push(...w.images)
+            if (Array.isArray(w.gallery)) imgs.push(...w.gallery)
+          })
+          const uniqueImgs = Array.from(new Set(imgs)).filter(Boolean)
+          if (uniqueImgs.length > 0) {
+            setDbImages(uniqueImgs)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch works gallery for scrubber', err)
+      }
+    }
+    loadWorkGallery()
+  }, [])
+
+  // Effective gallery fallback
+  const fallbackList = customImages && customImages.length > 0 
+    ? customImages 
+    : [mechanicBImg, mechanicAImg, pathao1Img, pathao2Img, fifaImg, mechanicC1Img]
+
+  const gallery = dbImages.length > 0 ? dbImages : fallbackList
+
+  const handleMouseMove = (e) => {
+    if (isTouchDevice || !cardRef.current || gallery.length <= 1) return
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const width = rect.width
+    if (width <= 0) return
+
+    const ratio = Math.max(0, Math.min(0.999, x / width))
+    const index = Math.floor(ratio * gallery.length)
+    if (index !== activeIdx) {
+      setActiveIdx(index)
+    }
+  }
+
+  const handleMouseEnter = () => {
+    if (!isTouchDevice) {
+      setIsRevealed(true)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!isTouchDevice) {
+      setIsRevealed(false)
+      setActiveIdx(0)
+    }
+  }
+
+  const handleCardClick = () => {
+    if (isTouchDevice) {
+      setIsRevealed(prev => !prev)
+    }
+  }
+
+  // Mobile fallback auto slideshow when revealed
+  useEffect(() => {
+    if (!isTouchDevice || gallery.length <= 1) return
+    const interval = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % gallery.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [isTouchDevice, gallery.length])
+
+  return (
+    <div className="space-y-3">
+      <div className="text-[11px] font-mono text-[#ff6b35] font-semibold tracking-wider uppercase">
+        {label}
+      </div>
+
+      {/* Interactive Scrubbing Card Container */}
+      <div
+        ref={cardRef}
+        onClick={handleCardClick}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="relative aspect-[16/10] overflow-hidden border border-neutral-800/80 bg-[#050505] rounded-lg group cursor-crosshair select-none"
+      >
+        {/* Layered images with smooth opacity & scale transition */}
+        {gallery.map((imgUrl, i) => (
+          <div
+            key={i}
+            className="absolute inset-0 w-full h-full transition-all duration-500 ease-out"
+            style={{
+              opacity: i === activeIdx ? 1 : 0,
+              transform: i === activeIdx ? 'scale(1)' : 'scale(1.04)',
+              zIndex: i === activeIdx ? 10 : 1,
+            }}
+          >
+            <img
+              src={imgUrl}
+              alt={`Brand artwork ${i + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+
+        {/* ── BI-PARTING LEFT & RIGHT CURTAINS ─────────────────────── */}
+        {/* Left Curtain */}
+        <div
+          className="absolute top-0 bottom-0 left-0 w-1/2 bg-[#050505] z-30 pointer-events-none border-r border-neutral-900/60"
+          style={{
+            transform: isRevealed ? 'translateX(-101%)' : 'translateX(0%)',
+            transition: 'transform 0.85s cubic-bezier(0.76, 0, 0.24, 1)',
+          }}
+        />
+
+        {/* Right Curtain */}
+        <div
+          className="absolute top-0 bottom-0 right-0 w-1/2 bg-[#050505] z-30 pointer-events-none border-l border-neutral-900/60"
+          style={{
+            transform: isRevealed ? 'translateX(101%)' : 'translateX(0%)',
+            transition: 'transform 0.85s cubic-bezier(0.76, 0, 0.24, 1)',
+          }}
+        />
+
+        {/* Center Label shown when curtains are closed */}
+        <div
+          className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 pointer-events-none"
+          style={{
+            opacity: isRevealed ? 0 : 1,
+            transition: 'opacity 0.35s ease',
+          }}
+        >
+          <div className="w-8 h-[1px] bg-[#ff6b35]" />
+          <span className="font-mono text-[9px] tracking-[0.25em] text-[#ff6b35] uppercase">
+            {isTouchDevice ? 'TAP TO REVEAL' : 'HOVER TO REVEAL'}
+          </span>
+          <div className="w-8 h-[1px] bg-[#ff6b35]" />
+        </div>
+      </div>
+
+      <p className="text-xs text-neutral-400 font-sans leading-relaxed">{desc}</p>
+    </div>
+  )
+}
 
 /**
  * RevealCard — curtain wipe reveal
@@ -219,24 +379,11 @@ export default function RevealMechanicsSection() {
             COLUMN B: KINETIC TYPOGRAPHY ART
             ───────────────────────────────────────────────────────────── */}
         {/* ── COLUMN B: KINETIC TYPOGRAPHY ART ─────────────────────── */}
-        <RevealCard label="[ KINETIC TYPOGRAPHY ART ]" desc="Typographic brand artwork scoping abstract motion graphics inside architectural letterform contours.">
-          <svg
-            ref={portalMaskRef}
-            viewBox="0 0 800 500"
-            className="w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <defs>
-              <mask id="alphaPortalMask">
-                <rect width="800" height="500" fill="black" />
-                <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="420" fontWeight="900" fontFamily="Bebas Neue, sans-serif" letterSpacing="0">P</text>
-              </mask>
-            </defs>
-            <g mask="url(#alphaPortalMask)">
-              <image ref={portalImgRef} href={mechanicBImg} x="-10%" y="-10%" width="120%" height="120%" preserveAspectRatio="xMidYMid slice" />
-            </g>
-          </svg>
-        </RevealCard>
+        <HoverScrubberCard
+          label="[ DYNAMIC BRAND GALLERY ]"
+          desc="Interactive brand showcase — move your cursor horizontally across the desktop card to scrub through portfolio artworks from the database."
+          defaultImage={mechanicBImg}
+        />
 
         {/* ─────────────────────────────────────────────────────────────
             COLUMN C: ACADEMIC & BRAND CAMPAIGN

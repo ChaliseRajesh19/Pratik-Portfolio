@@ -41,3 +41,79 @@ body {
   overflow-x: hidden;
   background-color: #050505;
 }
+
+/* ── Custom Animated Cursor Site-wide Styling ───────────────────────────── */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  html.has-custom-cursor,
+  html.has-custom-cursor *,
+  html.has-custom-cursor a,
+  html.has-custom-cursor button,
+  html.has-custom-cursor input,
+  html.has-custom-cursor select,
+  html.has-custom-cursor textarea,
+  html.has-custom-cursor [role="button"] {
+    cursor: none !important;
+  }
+
+  /* Restore normal browser cursor inside navigation header */
+  html.has-custom-cursor header,
+  html.has-custom-cursor header *,
+  html.has-custom-cursor nav,
+  html.has-custom-cursor nav * {
+    cursor: auto !important;
+  }
+  html.has-custom-cursor header a,
+  html.has-custom-cursor header button,
+  html.has-custom-cursor header [role="button"],
+  html.has-custom-cursor nav a,
+  html.has-custom-cursor nav button {
+    cursor: pointer !important;
+  }
+}
+
+.custom-cursor-ring {
+  margin-left: 0;
+  margin-top: 0;
+  transform-origin: center center;
+  border-radius: 9999px !important;
+}
+
+.custom-cursor-ring.ring-default {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  background-color: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+  border-radius: 9999px !important;
+}
+
+.custom-cursor-ring.ring-clickable {
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid rgba(30, 144, 255, 0.75);
+  background-color: rgba(30, 144, 255, 0.08);
+  box-shadow: 0 0 25px rgba(30, 144, 255, 0.35);
+  backdrop-filter: blur(2px);
+  border-radius: 9999px !important;
+}
+
+.custom-cursor-ring.ring-label {
+  width: 76px;
+  height: 76px;
+  border: 1.5px solid #1e90ff;
+  background-color: rgba(8, 8, 8, 0.88);
+  box-shadow: 0 0 30px rgba(30, 144, 255, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 9999px !important;
+}
+
+.custom-cursor-ring.ring-drag {
+  width: 78px;
+  height: 78px;
+  border: 1.5px dashed #ff6b35;
+  background-color: rgba(12, 12, 12, 0.88);
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 9999px !important;
+}
+

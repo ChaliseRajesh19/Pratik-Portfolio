@@ -191,6 +191,7 @@ export default function WorksListing({ initialWorks }) {
               key={work.slug}
               to={`/works/${work.slug}`}
               ref={addToRefs}
+              data-cursor="VIEW"
               className="group cursor-pointer flex flex-col space-y-4 border-b border-neutral-900/50 pb-8 block"
             >
               {/* Image Frame with spring scale-up zoom hover */}

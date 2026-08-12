@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { contentServices, supabase } from '../services/contentService'
 import { AnimatePresence, motion } from 'framer-motion'
+import { ENV } from '../config/env'
 import './admin.css'
 
 // Admin sub-components
@@ -27,8 +28,8 @@ function LoginScreen({ onLogin }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@pratikbhusal.com'
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin12345'
+  const ADMIN_EMAIL = ENV.ADMIN_EMAIL
+  const ADMIN_PASSWORD = ENV.ADMIN_PASSWORD
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -133,8 +134,10 @@ function ContentTabView({
   // For orderable types (capabilities, milestones) use DragReorderList
   const isOrderable = type === 'capabilities' || type === 'milestones'
 
+  const getItemKey = (item) => item.id ?? item.slug ?? item.title
+
   const handleSelectToggle = (id) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -142,17 +145,18 @@ function ContentTabView({
     })
   }
 
-  const handleSelectAll = () => {
-    if (selectedIds.size === data.length) {
+  const handleSelectAll = (selectAllChecked) => {
+    if (selectAllChecked === false || selectedIds.size === data.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(data.map(d => d.id)))
+      setSelectedIds(new Set(data.map(getItemKey)))
     }
   }
 
   const handleBulkDelete = async () => {
     for (const id of selectedIds) {
-      await onDelete({ id }, true) // bulk = true, skip confirmation
+      const itemToDelete = data.find(d => getItemKey(d) === id) || { id }
+      await onDelete(itemToDelete, true) // bulk = true, skip confirmation
     }
     setSelectedIds(new Set())
   }
@@ -161,9 +165,21 @@ function ContentTabView({
     setDeleteTarget(item)
   }
 
+  const triggerBulkDelete = () => {
+    setDeleteTarget({ isBulk: true })
+  }
+
   const executeDelete = async () => {
     if (deleteTarget) {
-      await onDelete(deleteTarget)
+      if (deleteTarget.isBulk) {
+        for (const id of selectedIds) {
+          const itemToDelete = data.find(d => getItemKey(d) === id) || { id }
+          await onDelete(itemToDelete, true)
+        }
+        setSelectedIds(new Set())
+      } else {
+        await onDelete(deleteTarget)
+      }
       setDeleteTarget(null)
     }
   }
@@ -275,11 +291,11 @@ function ContentTabView({
             <span className="text-sm text-zinc-300">{selectedIds.size} selected</span>
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer"
+              onClick={triggerBulkDelete}
+              className="flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
               <Trash2 size={14} />
-              Delete
+              Delete Selected
             </motion.button>
             <button
               onClick={() => setSelectedIds(new Set())}
@@ -296,8 +312,12 @@ function ContentTabView({
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={executeDelete}
-        itemName={deleteTarget?.title || deleteTarget?.name || 'this item'}
-        itemType={type}
+        itemName={
+          deleteTarget?.isBulk
+            ? `${selectedIds.size} selected item${selectedIds.size > 1 ? 's' : ''}`
+            : deleteTarget?.title || deleteTarget?.name || deleteTarget?.label || 'this item'
+        }
+        itemType={deleteTarget?.isBulk ? 'Multiple Items' : type}
       />
     </motion.div>
   )
@@ -407,28 +427,30 @@ function AdminDashboard() {
 
   // Navigation handler
   const handleNavigate = useCallback((tab, action) => {
-    setActiveTab(tab)
+    const normalizedTab = tab === 'work' ? 'works' : (tab === 'blogs' ? 'blog' : tab)
+    setActiveTab(normalizedTab)
     setEditingItem(null)
     setEditType(null)
 
     if (action === 'new') {
       // Open new item form
       setTimeout(() => {
-        handleCreateNew(tab)
+        handleCreateNew(normalizedTab)
       }, 50)
     }
   }, [handleCreateNew])
 
   // Command palette navigation
   const handleCommandNavigate = useCallback((tab, item) => {
+    const normalizedTab = tab === 'work' ? 'works' : (tab === 'blogs' ? 'blog' : tab)
     setCommandPaletteOpen(false)
-    setActiveTab(tab)
+    setActiveTab(normalizedTab)
     if (item === 'new') {
       setEditingItem(null)
       setEditType(null)
-      setTimeout(() => handleCreateNew(tab), 50)
+      setTimeout(() => handleCreateNew(normalizedTab), 50)
     } else if (item && typeof item === 'object') {
-      setEditType(tab === 'blog' ? 'blogs' : tab)
+      setEditType(normalizedTab === 'blog' ? 'blogs' : normalizedTab)
       setEditingItem(item)
     } else {
       setEditingItem(null)
@@ -463,33 +485,41 @@ function AdminDashboard() {
       loadData()
       notifyContentUpdate()
     } catch (err) {
-      showToast('Failed to save — please try again', 'error')
-      console.error(err)
+      console.error('Save error:', err)
+      const errorMsg = err.message || 'Failed to save — please try again'
+      showToast(errorMsg, 'error')
+      setEditingItem(null)
+      setEditType(null)
+      loadData()
+      notifyContentUpdate()
     }
   }, [editType, showToast, loadData])
 
   const handleDelete = useCallback(async (item, skipToast) => {
     try {
       const type = activeTab
+      const targetId = item.id ?? item.slug ?? item.title ?? item.name ?? item.quote
+
       if (type === 'works') {
-        setWorks(prev => prev.filter(w => w.id !== item.id))
-        await contentServices.deleteWork(item.id)
-      } else if (type === 'blog') {
-        setBlogs(prev => prev.filter(b => b.id !== item.id))
-        await contentServices.deleteBlogPost(item.id)
+        setWorks(prev => prev.filter(w => String(w.id ?? w.slug ?? w.title) !== String(targetId)))
+        await contentServices.deleteWork(targetId)
+      } else if (type === 'blog' || type === 'blogs') {
+        setBlogs(prev => prev.filter(b => String(b.id ?? b.slug ?? b.title) !== String(targetId)))
+        await contentServices.deleteBlogPost(targetId)
       } else if (type === 'testimonials') {
-        setTestimonials(prev => prev.filter(t => t.id !== item.id))
-        await contentServices.deleteTestimonial(item.id)
+        setTestimonials(prev => prev.filter(t => String(t.id ?? t.name ?? t.quote) !== String(targetId)))
+        await contentServices.deleteTestimonial(targetId)
       } else if (type === 'capabilities') {
-        setCapabilities(prev => prev.filter(c => c.id !== item.id))
-        await contentServices.deleteCapability(item.id)
+        setCapabilities(prev => prev.filter(c => String(c.id ?? c.name ?? c.title) !== String(targetId)))
+        await contentServices.deleteCapability(targetId)
       } else if (type === 'milestones') {
-        setMilestones(prev => prev.filter(m => m.id !== item.id))
-        await contentServices.deleteMilestone(item.id)
+        setMilestones(prev => prev.filter(m => String(m.id ?? m.title ?? m.year) !== String(targetId)))
+        await contentServices.deleteMilestone(targetId)
       }
       if (!skipToast) showToast('Deleted successfully', 'success')
       notifyContentUpdate()
     } catch (err) {
+      console.error('Delete error:', err)
       showToast('Failed to delete', 'error')
       loadData() // rollback
     }
@@ -606,7 +636,14 @@ function AdminDashboard() {
           key={editingItem.id || 'new'}
           item={editingItem}
           type={editType}
-          onCancel={() => { setEditingItem(null); setEditType(null) }}
+          onCancel={() => {
+            if (editType) {
+              const tabName = editType === 'blogs' ? 'blog' : editType;
+              setActiveTab(tabName);
+            }
+            setEditingItem(null);
+            setEditType(null);
+          }}
           onSave={handleSave}
           allWorks={works}
           allBlogs={blogs}
@@ -629,6 +666,7 @@ function AdminDashboard() {
           />
         )
       case 'works':
+      case 'work':
         return (
           <ContentTabView
             type="works"
@@ -650,6 +688,7 @@ function AdminDashboard() {
           />
         )
       case 'blog':
+      case 'blogs':
         return (
           <ContentTabView
             type="blog"
@@ -736,7 +775,26 @@ function AdminDashboard() {
           />
         )
       default:
-        return null
+        return (
+          <ContentTabView
+            type="works"
+            data={works}
+            isLoading={isLoading}
+            onEdit={(item) => { setEditType('works'); setEditingItem(item) }}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onToggleStatus={handleToggleStatus}
+            onCreateNew={() => handleCreateNew('works')}
+            tabTitle="Works & Case Studies"
+            tabSubtitle="Manage your portfolio projects"
+            columns={worksColumns}
+            searchKeys={['title', 'client']}
+            emptyTitle="No works yet"
+            emptyDescription="Create your first case study to showcase your design projects."
+            emptyIcon={Briefcase}
+            showToast={showToast}
+          />
+        )
     }
   }
 
@@ -751,25 +809,15 @@ function AdminDashboard() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
         <AdminTopBar
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           activeTab={activeTab}
         />
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <div className="max-w-6xl">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={editingItem ? 'edit' : activeTab}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.15 }}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
+        <main className="flex-1 h-full min-h-0 overflow-y-auto admin-scroll p-4 sm:p-6 lg:p-8" data-lenis-prevent="true" style={{ overscrollBehavior: 'contain' }}>
+          <div className="w-full">
+            {renderContent()}
           </div>
         </main>
       </div>

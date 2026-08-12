@@ -4,6 +4,7 @@ import { ContentProvider } from './context/ContentContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import CustomCursor from './components/CustomCursor'
 import Lenis from 'lenis'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -16,9 +17,14 @@ export default function App() {
   const currentPath = location.pathname
   const isAdminPage = currentPath.startsWith('/admin')
 
-  // Initialize Lenis smooth scrolling
+  // Initialize Lenis smooth scrolling (disabled on Admin pages to prevent scrolling lock)
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    if (isAdminPage) {
+      document.documentElement.classList.remove('lenis', 'lenis-smooth', 'lenis-scrolling')
+      return
+    }
 
     const lenis = new Lenis({
       duration: 1.0,
@@ -46,10 +52,11 @@ export default function App() {
       lenis.destroy()
       gsap.ticker.remove(handleRaf)
     }
-  }, [currentPath])
+  }, [isAdminPage, currentPath])
 
   return (
     <ContentProvider>
+      {!isAdminPage && <CustomCursor />}
       <main className="relative min-h-screen bg-[#050505] text-white selection:bg-[#1e90ff] selection:text-black overflow-x-hidden">
         <AnimatePresence mode="wait">
           <motion.div
@@ -71,3 +78,4 @@ export default function App() {
     </ContentProvider>
   )
 }
+

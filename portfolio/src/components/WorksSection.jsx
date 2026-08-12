@@ -77,6 +77,7 @@ function DraggableCardGroupW1({ images }) {
             onClick={() => bringToFront(imgIdx)}
             whileHover={{ y: -8, scale: 1.03 }}
             transition={{ layout: { type: 'spring', stiffness: 280, damping: 24 } }}
+            data-cursor="DRAG"
             className={`pkg-card-w1 absolute ${pos.left} ${pos.top} ${pos.size} rounded-2xl overflow-hidden shadow-[0_25px_65px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing`}
             style={{ zIndex: (stackPos + 1) * 10 }}
           >
@@ -124,6 +125,7 @@ function DraggableCardGroupW5({ images }) {
             onClick={() => bringToFront(imgIdx)}
             whileHover={{ y: -8, scale: 1.04 }}
             transition={{ layout: { type: 'spring', stiffness: 280, damping: 24 } }}
+            data-cursor="DRAG"
             className={`w5-card absolute ${pos.right} ${pos.top} ${pos.size} rounded-2xl overflow-hidden shadow-[0_25px_65px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing`}
             style={{ zIndex: (stackPos + 1) * 10 }}
           >

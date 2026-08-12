@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { blogPosts } from '../data/blogData'
 import SEO from './SEO'
+import { convertMarkdownToHtml } from '../admin/editor/MarkdownConverter'
 
 function slugify(text) {
   return text
@@ -12,6 +13,22 @@ function slugify(text) {
 }
 
 function extractHeaders(content) {
+  if (!content) return []
+
+  if (content.trim().startsWith('<')) {
+    const headers = []
+    const regex = /<h([1-4])\b[^>]*>(.*?)<\/h[1-4]>/gi
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      const level = parseInt(match[1], 10)
+      const rawText = match[2].replace(/<[^>]+>/g, '').trim()
+      if (rawText) {
+        headers.push({ level, text: rawText, id: slugify(rawText) })
+      }
+    }
+    return headers
+  }
+
   const lines = content.split('\n')
   const headers = []
   lines.forEach((line) => {
@@ -26,64 +43,14 @@ function extractHeaders(content) {
 }
 
 function renderMarkdownContent(content) {
-  const lines = content.split('\n')
-  const elements = []
-  let inList = false
-  let listItems = []
-
-  const pushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={`list-${elements.length}`} className="list-disc pl-5 my-6 space-y-2 text-neutral-300 leading-relaxed font-sans text-base sm:text-lg">
-          {listItems.map((item, idx) => <li key={idx}>{item}</li>)}
-        </ul>
-      )
-      listItems = []
-      inList = false
-    }
-  }
-
-  lines.forEach((line, index) => {
-    const trimmed = line.trim()
-
-    if (trimmed.startsWith('- ')) {
-      inList = true
-      listItems.push(trimmed.substring(2))
-    } else if (trimmed.startsWith('## ')) {
-      if (inList) pushList()
-      const text = trimmed.substring(3)
-      elements.push(
-        <h2 key={index} id={slugify(text)} className="font-bebas text-3xl sm:text-4xl text-white tracking-wide mt-10 mb-4 border-b border-neutral-900 pb-2">
-          {text}
-        </h2>
-      )
-    } else if (trimmed.startsWith('### ')) {
-      if (inList) pushList()
-      const text = trimmed.substring(4)
-      elements.push(
-        <h3 key={index} id={slugify(text)} className="font-bebas text-2xl sm:text-3xl text-neutral-200 tracking-wide mt-8 mb-3">
-          {text}
-        </h3>
-      )
-    } else if (trimmed.startsWith('> ')) {
-      if (inList) pushList()
-      elements.push(
-        <blockquote key={index} className="border-l-2 border-[#1e90ff] pl-6 my-6 py-2 italic font-sans text-neutral-300 text-lg sm:text-xl bg-neutral-900/30 rounded-r-lg">
-          {trimmed.substring(2)}
-        </blockquote>
-      )
-    } else if (trimmed.length > 0) {
-      if (inList) pushList()
-      elements.push(
-        <p key={index} className="my-4 text-neutral-300 font-sans text-base sm:text-lg leading-relaxed">
-          {trimmed}
-        </p>
-      )
-    }
-  })
-
-  if (inList) pushList()
-  return elements
+  if (!content) return null
+  const htmlContent = content.trim().startsWith('<') ? content : convertMarkdownToHtml(content)
+  return (
+    <div
+      className="blog-html-content space-y-4 text-neutral-300 font-sans text-base sm:text-lg leading-relaxed"
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  )
 }
 
 export default function BlogPost({ slug, initialBlogs }) {
