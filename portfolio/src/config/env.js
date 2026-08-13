@@ -6,16 +6,14 @@
 
 export const ENV = {
   SUPABASE_URL:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) ||
-    'https://tdgmzwjevbyxzgqjqlir.supabase.co',
+        'https://tdgmzwjevbyxzgqjqlir.supabase.co',
   SUPABASE_ANON_KEY:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZ216d2pldmJ5eHpncWpxbGlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNTcxMDQsImV4cCI6MjEwMTkzMzEwNH0.V2TdM_5RDyTwfq365tazGifMPPZ08LHxSBLIyJ4QhBs',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZ216d2pldmJ5eHpncWpxbGlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNTcxMDQsImV4cCI6MjEwMTkzMzEwNH0.V2TdM_5RDyTwfq365tazGifMPPZ08LHxSBLIyJ4QhBs',
   ADMIN_EMAIL:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_EMAIL) ||
+    
     'pratikbhusal12345@gmail.com',
   ADMIN_PASSWORD:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_PASSWORD) ||
+   
     'admin@pratik',
 };
 
