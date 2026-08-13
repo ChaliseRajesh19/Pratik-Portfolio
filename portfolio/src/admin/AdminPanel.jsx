@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { contentServices, supabase } from '../services/contentService'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ENV } from '../config/env'
+import NotFound from '../components/NotFound'
 import './admin.css'
 
 // Admin sub-components

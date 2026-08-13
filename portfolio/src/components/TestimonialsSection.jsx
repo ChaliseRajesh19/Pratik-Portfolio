@@ -141,7 +141,7 @@ export default function TestimonialsSection({ initialTestimonials }) {
                       >
                         {/* Client Avatar / Photo */}
                         <img
-                          src={t.avatarImage || t.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}
+                          src={t.avatarImage || t.avatar_image || t.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}
                           alt={t.name}
                           className="w-12 h-12 rounded-full object-cover border border-neutral-800/80 shadow-md flex-shrink-0"
                           loading="lazy"

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { contentServices, supabase } from '../services/contentService'
 import { motion } from 'framer-motion'
 import { ENV } from '../config/env'
+import NotFound from './NotFound'
 
 export default function AdminPanel({ currentPath, onNavigate }) {
   const navigate = useNavigate()
@@ -96,6 +97,15 @@ export default function AdminPanel({ currentPath, onNavigate }) {
   }
 
   if (!isAuthenticated) {
+    const searchParams = new URLSearchParams(location.search)
+    const isLoginAttempt =
+      location.pathname.toLowerCase().includes('/login') ||
+      searchParams.has('login') ||
+      searchParams.has('auth')
+
+    if (!isLoginAttempt) {
+      return <NotFound />
+    }
     return (
       <div className="min-h-screen bg-[#080808] text-white flex items-center justify-center px-6 py-12 selection:bg-[#1e90ff] selection:text-black font-sans">
         <div className="w-full max-w-md bg-[#0e0e0e] border border-neutral-800 rounded-xl p-8 shadow-2xl space-y-6">
